@@ -1,5 +1,4 @@
-const IP = "ws://https://pokepio.herokuapp.com";
-const socket = io(IP);
+const socket = io();
 
 socket.on('connect', () => {
     console.log("Hola");
