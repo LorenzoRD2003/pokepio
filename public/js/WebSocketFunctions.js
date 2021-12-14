@@ -1,4 +1,4 @@
-const IP = "ws://192.168.56.1:3000";
+const IP = "ws://https://pokepio.herokuapp.com";
 const socket = io(IP);
 
 socket.on('connect', () => {
