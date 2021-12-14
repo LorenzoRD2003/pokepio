@@ -1,0 +1,36 @@
+<div class="mt-5 bg-light mb-3 p-3 border" id="teamsContainerDiv">
+    <div class="row my-3 form-group">
+        <h2>Lista de equipos</h2>
+    </div>
+    <div id="teamsContainer" class="my-3 form-group container">
+        {{#each teams}}
+        <div class="mb-5" data-id="{{this.ID_Team}}">
+            <div class="row text-center">
+                <div class="col-sm-12 col-lg-3">
+                    <h4>{{this.team_name}}</h4>
+                </div>
+                <div class="col-sm-12 col-lg-3">
+                    <button class="btn btn-primary btn-sm" onclick="showPokemonCreator(this)">Añadir Pokémon</button>
+                </div>
+                <div class="col-sm-12 col-lg-3">
+                    <button class="btn btn-secondary btn-sm" onclick="activateInputOfModifyTeamName(this)">Cambiar nombre</button>
+                </div>
+                <div class="col-sm-12 col-lg-3">
+                    <button class="btn btn-danger btn-sm" onclick="deleteTeam(this)">Eliminar equipo</button>
+                </div>
+            </div>
+            {{#each this.pokemon}}
+            <ul class="offset-md-1 offset-lg-1">
+                <li class="capitalize" data-number="{{@index}}">
+                    {{this.name}}
+                    <img src="{{this.sprite}}">
+                    <button class="btn btn-danger btn-sm" onclick="deletePokemon(this)">Eliminar Pokémon</button>
+                </li>
+            </ul>
+            {{/each}}
+        </div>
+        {{/each}}
+    </div>
+</div>
+{{> newPokemon}}
+<form id="returnToTeambuilderForm" action="/teambuilder" method="GET"></form>

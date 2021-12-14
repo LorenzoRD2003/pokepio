@@ -1,0 +1,86 @@
+{{> navbar}}
+
+<div class="container-sm">
+    <div class="mt-5 bg-light mb-3 p-3 border">
+        <div class="row my-3 form-group">
+            <div class="col-sm-6">
+                <h1>Mi usuario: {{user.username}}</h1>
+            </div>
+        </div>
+        {{> errorAlert}}
+        <div class="row my-3">
+            <div class="col-sm-12 col-lg-6">
+                <div class="my-3 form-group">
+                    <h3>Datos obligatorios</h3>
+                </div>
+                <div class="mb-3 form-group">
+                    <b>Email:</b> {{user.email}}
+                </div>
+                <div class="mb-3 form-group">
+                    <b>Nombre de usuario:</b> {{user.username}}
+                </div>
+                <div class="col-sm-6 text-center">
+                    {{#if user.profile_photo}}
+                    <img src="/img/profile_photos/{{user.profile_photo}}" class="profile-photo rounded-circle">
+                    {{else}}
+                    <b>Sin foto de perfil</b>
+                    {{/if}}
+                </div>
+            </div>
+            <div class="col-sm-12 col-lg-6">
+                <div class="my-3 form-group">
+                    <h3>Datos opcionales</h3>
+                </div>
+                <div class="mb-3 form-group">
+                    {{#if user.real_name}}
+                    <b>Nombre real:</b> {{user.real_name}}
+                    {{else}}
+                    <b>Nombre real:</b> Desconocido
+                    {{/if}}
+                </div>
+                <div class="mb-3 form-group">
+                    {{#if user.age}}
+                    <b>Edad:</b> {{user.age}}
+                    {{else}}
+                    <b>Edad:</b> Desconocida
+                    {{/if}}
+                </div>
+                <div class="mb-3 form-group">
+                    {{#if user.nationality}}
+                    <b>Nacionalidad:</b> {{user.nationality}}
+                    {{else}}
+                    <b>Nacionalidad:</b> Desconocida
+                    {{/if}}
+                </div>
+                <div class="mb-3 form-group">
+                    {{#if user.hobbies}}
+                    <b>Hobbies:</b> {{user.hobbies}}
+                    {{else}}
+                    <b>Hobbies: </b> Desconocidos
+                    {{/if}}
+                </div>
+                <div class="mb-3 form-group">
+                    {{#if user.pokemon_favorito}}
+                    <b>Pokémon favorito:</b> {{user.pokemon_favorito}}
+                    {{else}}
+                    <b>Pokémon favorito:</b> Desconocido
+                    {{/if}}
+                </div>
+            </div>
+        </div>
+        <div class="row my-3 text-center">
+            <form action="/home/uploadProfilePhoto" method="POST" class="col-sm-12 col-lg-4"
+                enctype="multipart/form-data">
+                <button type="submit" class="btn btn-primary btn-lg">Cambiar foto de perfil</button>
+                <input type="file" id="profilePhoto" name="profile_photo" accept="image/png, image/jpeg">
+            </form>
+            <div class="col-sm-12 col-lg-4">
+                <a class="btn btn-primary btn-lg" href="/home/modifyPassword">Cambiar contraseña</a>
+            </div>
+            <div class="col-sm-12 col-lg-4">
+                <a class="btn btn-primary btn-lg" href="/home/modifyUserData">Modificar datos</a>
+            </div>
+        </div>
+    </div>
+    {{> teamsContainer}}
+</div>

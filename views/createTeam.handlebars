@@ -1,0 +1,16 @@
+{{> navbar}}
+<div class="container-sm mt-5">
+    {{> errorAlert}}
+    <div id="newTeamNameDiv" class="px-5 pt-3 bg-light mb-3 p-3 border">
+        <div class="mb-3 form-group">
+            <label for="newTeamName" class="form-label">Nombre del Equipo</label>
+            <input id="newTeamName" type="text" class="form-control" value="">
+        </div>
+        <div class="mb-3 form-group text-center">
+            <button class="btn btn-lg btn-primary" onclick="addNewTeam()">Agregar Equipo</button>
+        </div>
+    </div>
+    {{> newPokemon}}
+</div>
+
+<form id="returnToTeambuilderForm" action="/teambuilder" method="GET"></form>

@@ -1,0 +1,28 @@
+<div class="container-sm">
+    <div class="mt-5 bg-light mb-3 p-3 border">
+        <div class="my-3 form-group">
+            <h2>Crear cuenta</h2>
+        </div>
+        <div class="mb-3 form-group">
+            <label for="createAccountEmailID" class="form-label">Email</label>
+            <input type="email" class="form-control" id="createAccountEmailID" placeholder="Email">
+        </div>
+        <div class="mb-3 form-group">
+            <label for="createAccountUsernameID" class="form-label">Nombre de usuario</label>
+            <input type="text" class="form-control" id="createAccountUsernameID" placeholder="Nombre de usuario">
+        </div>
+        <div class="mb-3 form-group">
+            <label for="createAccountPasswordID" class="form-label">Contraseña</label>
+            <input type="password" class="form-control" id="createAccountPasswordID" placeholder="Contraseña">
+        </div>
+        <div class="mb-3 form-check">
+            <button type="button" class="btn btn-primary" onclick="createAccount()">Crear Cuenta</button>
+        </div>
+    </div>
+</div>
+
+<form id="returnLoginForm" action="/" method="GET" class="container-sm"></form>
+
+<div class="text-center mb-3">
+    <a id="returnCreateAccountLink" href="/" class="btn btn-primary btn-lg">Volver</a>
+</div>

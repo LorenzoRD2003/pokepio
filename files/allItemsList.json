@@ -1,0 +1,374 @@
+[
+    {
+        "id": 126,
+        "name": "Cheri-berry",
+        "description": "Held in battle\n:   When the holder is paralyzed, it consumes this item to cure the paralysis.\n\nUsed on a party Pokémon\n:   Cures paralysis.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 127,
+        "name": "Chesto-berry",
+        "description": "Held in battle\n:   When the holder is asleep, it consumes this item to wake up.\n\nUsed on a party Pokémon\n:   Cures sleep.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 128,
+        "name": "Pecha-berry",
+        "description": "Held in battle\n:   When the holder is poisoned, it consumes this item to cure the poison.\n\nUsed on a party Pokémon\n:   Cures poison.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 129,
+        "name": "Rawst-berry",
+        "description": "Held in battle\n:   When the holder is burned, it consumes this item to cure the burn.\n\nUsed on a party Pokémon\n:   Cures a burn.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 130,
+        "name": "Aspear-berry",
+        "description": "Held in battle\n:   When the holder is frozen, it consumes this item to thaw itself.\n\nUsed on a party Pokémon\n:   Cures freezing.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 131,
+        "name": "Leppa-berry",
+        "description": "Held in battle\n:   When the holder is out of PP for one of its moves, it consumes this item to restore 10 of that move's PP.\n\nUsed on a party Pokémon\n:   Restores 10 PP for a selected move.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 132,
+        "name": "Oran-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 10 HP.\n\nUsed on a party Pokémon\n:   Restores 10 HP.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 133,
+        "name": "Persim-berry",
+        "description": "Held in battle\n:   When the holder is confused, it consumes this item to cure the confusion.\n\nUsed on a party Pokémon\n:   Cures confusion.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 134,
+        "name": "Lum-berry",
+        "description": "Held in battle\n:   When the holder is afflicted with a major status ailment, it consumes this item to cure the ailment.\n\nUsed on a party Pokémon\n:   Cures any major status ailment.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 135,
+        "name": "Sitrus-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/4 its max HP.\n\nUsed on a party Pokémon\n:   Restores 1/4 the Pokémon's max HP.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 136,
+        "name": "Figy-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/8 its max HP.  If the holder dislikes spicy flavors (i.e., has a nature that lowers Attack), it will also become confused.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 137,
+        "name": "Wiki-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/8 its max HP.  If the holder dislikes dry flavors (i.e., has a nature that lowers Special Attack), it will also become confused.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 138,
+        "name": "Mago-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/8 its max HP.  If the holder dislikes sweet flavors (i.e., has a nature that lowers Speed), it will also become confused.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 139,
+        "name": "Aguav-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/8 its max HP.  If the holder dislikes bitter flavors (i.e., has a nature that lowers Special Defense), it will also become confused.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 140,
+        "name": "Iapapa-berry",
+        "description": "Held in battle\n:   When the holder has 1/2 its max HP remaining or less, it consumes this item to restore 1/8 its max HP.  If the holder dislikes sour flavors (i.e., has a nature that lowers Defense), it will also become confused.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 178,
+        "name": "Liechi-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its Attack by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 179,
+        "name": "Ganlon-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its Defense by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 180,
+        "name": "Salac-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its Speed by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 181,
+        "name": "Petaya-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its Special Attack by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 182,
+        "name": "Apicot-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its Special Defense by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 183,
+        "name": "Lansat-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise its critical hit chance by one stage.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 184,
+        "name": "Starf-berry",
+        "description": "Held in battle\n:   When the holder has 1/4 its max HP remaining or less, it consumes this item to raise a random stat by two stages.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 185,
+        "name": "Enigma-berry",
+        "description": "Held in battle\n:   When the holder takes super-effective damage, it consumes this item to restore 1/4 its max HP.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 190,
+        "name": "Bright-powder",
+        "description": "Held in battle\n:   Moves targeting the holder have 0.9× chance to hit.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 191,
+        "name": "White-herb",
+        "description": "Held in battle\n:   At the end of each turn, if any of the holder's stats have a negative stat modifier, the holder consumes this item to remove the modifiers from those stats.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 194,
+        "name": "Quick-claw",
+        "description": "Held in battle\n:   Whenever the holder attempts to use a move, it has a 3/16 chance to act first among moves with the same priority.  If multiple Pokémon have this effect at the same time, Speed is the tie-breaker as normal, but the effect of trick room is ignored.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 196,
+        "name": "Mental-herb",
+        "description": "Held in battle\n:   When the holder is attracted, it consumes this item to cure the attraction.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 197,
+        "name": "Choice-band",
+        "description": "Held in battle\n:   Holder has 1.5× its Attack.  When the holder attempts to use a move, all its other moves are disabled until it leaves battle or loses this item.\n\n    The restriction ends even if this item is swapped for another Choice item\nvia trick or switcheroo.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 198,
+        "name": "Kings-rock",
+        "description": "Held in battle\n:   Holder's damaging moves have a 10% chance to make their target flinch.  This chance applies independently to each hit of a multi-hit move.\n\n    This item's chance is rolled independently of any other move effects;\ne.g., a move with a 30% chance to flinch normally will have a 37% total chance to flinch when used with this item, because 3% of the time, both effects activate.\n\nHeld by poliwhirl or slowbro\n:   Holder evolves into politoed or slowking, respectively, when traded.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 199,
+        "name": "Silver-powder",
+        "description": "Held in battle\n:   Holder's bug-type moves have 1.2× their power.\n",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 202,
+        "name": "Soul-dew",
+        "description": "Held by Latias or Latios: Increases the holder's Special Attack and Special Defense by 50%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 203,
+        "name": "Deep-sea-tooth",
+        "description": "Held by Clamperl: Doubles the holder's Special Attack.  Evolves the holder into Huntail when traded.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 204,
+        "name": "Deep-sea-scale",
+        "description": "Held by Clamperl: Doubles the holder's Special Defense.  Evolves the holder into Gorebyss when traded.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 207,
+        "name": "Focus-band",
+        "description": "Held: If the holder is attacked for regular damage that would faint it, this item has a 10% chance to prevent the holder's HP from lowering below 1.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 209,
+        "name": "Scope-lens",
+        "description": "Held: Raises the holder's critical hit counter by 1.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 210,
+        "name": "Metal-coat",
+        "description": "Held: Increases the power of the holder's Steel moves by 20%.\nHeld by Onix or Scyther: Evolves the holder into Steelix or Scizor when traded, respectively.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 211,
+        "name": "Leftovers",
+        "description": "Held: Heals the holder by 1/16 its max HP at the end of each turn.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 213,
+        "name": "Light-ball",
+        "description": "Held by Pikachu: Doubles the holder's initial Attack and Special Attack.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 214,
+        "name": "Soft-sand",
+        "description": "Held: Increases the power of the holder's Ground moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 215,
+        "name": "Hard-stone",
+        "description": "Held: Increases the power of the holder's Rock moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 216,
+        "name": "Miracle-seed",
+        "description": "Held: Increases the power of the holder's Grass moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 217,
+        "name": "Black-glasses",
+        "description": "Held: Increases the power of the holder's Dark moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 218,
+        "name": "Black-belt",
+        "description": "Held: Increases the power of the holder's Fighting moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 219,
+        "name": "Magnet",
+        "description": "Held: Increases the power of the holder's Electric moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 220,
+        "name": "Mystic-water",
+        "description": "Held: Increases the power of the holder's Water moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 221,
+        "name": "Sharp-beak",
+        "description": "Held: Increases the power of the holder's Flying moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 222,
+        "name": "Poison-barb",
+        "description": "Held: Increases the power of the holder's Poison moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 223,
+        "name": "Never-melt-ice",
+        "description": "Held: Increases the power of the holder's Ice moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 224,
+        "name": "Spell-tag",
+        "description": "Held: Increases the power of the holder's Ghost moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 225,
+        "name": "Twisted-spoon",
+        "description": "Held: Increases the power of the holder's Psychic moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 226,
+        "name": "Charcoal",
+        "description": "Held: Increases the power of the holder's Fire moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 227,
+        "name": "Dragon-fang",
+        "description": "Held: Increases the power of the holder's Dragon moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 228,
+        "name": "Silk-scarf",
+        "description": "Held: Increases the power of the holder's Normal moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 229,
+        "name": "Up-grade",
+        "description": "Held by Porygon: Evolves the holder into Porygon2 when traded.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 230,
+        "name": "Shell-bell",
+        "description": "Held: Heals the holder by 1/8 of any damage it inflicts.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 231,
+        "name": "Sea-incense",
+        "description": "Held: Increases the power of the holder's Water moves by 20%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 232,
+        "name": "Lax-incense",
+        "description": "Held: Increases the holder's Evasion by 5%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 233,
+        "name": "Lucky-punch",
+        "description": "Held by Chansey: Raises the holder's critical hit counter by 2.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 234,
+        "name": "Metal-powder",
+        "description": "Held by Ditto: Increases the holder's initial Defense and Special Defense by 50%.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 235,
+        "name": "Thick-club",
+        "description": "Held by Cubone or Marowak: Doubles the holder's Attack.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 236,
+        "name": "Stick",
+        "description": "Held by Farfetch'd: Raises the holder's critical hit counter by 2.",
+        "generation": "generation-iii"
+    },
+    {
+        "id": 237,
+        "name": "Red-scarf",
+        "description": "Held: Increases the holder's Coolness during a Super Contest's Visual Competition.",
+        "generation": "generation-iii"
+    }
+]

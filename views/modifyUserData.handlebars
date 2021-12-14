@@ -1,0 +1,43 @@
+{{> navbar}}
+<div class="container-sm mt-5 bg-light mb-3 p-3 border">
+    <div class="my-3 form-group">
+        <h1>Mi usuario: {{user.username}}</h1>
+    </div>
+    {{> errorAlert}}
+    <div class="mb-3 form-group">
+        <label for="modifyUserDataRealName" class="form-label">Nombre real</label>
+        <input type="text" class="form-control" id="modifyUserDataRealName" name="real-name" placeholder="Nombre real"
+            value="{{user.real_name}}">
+    </div>
+    <div class="mb-3 form-group">
+        <label for="modifyUserDataAge" class="form-label">Edad</label>
+        <input type="number" class="form-control" id="modifyUserDataAge" name="age" placeholder="Edad"
+            value="{{user.age}}">
+    </div>
+    <div class="mb-3 form-group">
+        <label for="modifyUserDataNationality" class="form-label">Nacionalidad</label>
+        <input type="text" class="form-control" id="modifyUserDataNationality" name="nationality"
+            placeholder="Nacionalidad" value="{{user.nationality}}">
+    </div>
+    <div class="mb-3 form-group">
+        <label for="modifyUserHobbies" class="form-label">Hobbies</label>
+        <input type="text" class="form-control" id="modifyUserDataHobbies" name="hobbies" placeholder="Hobbies"
+            value="{{user.hobbies}}">
+    </div>
+    <div class="mb-3 form-group">
+        <label for="modifyUserDataFavoritePokemon" class="form-label">Pokémon favorito</label>
+        <select id="modifyUserDataFavoritePokemon" name="pokemon_favorito" class="form-select">
+            <option value="" disabled selected>Seleccione un Pokémon...</option>
+            {{#each pokemonList}}
+            <option>{{this}}</option>
+            {{/each}}
+        </select>
+    </div>
+    <div class="mb-3 form-check">
+        <button type="button" class="btn btn-primary btn-lg" onclick="modifyUserData()">Modificar</button>
+    </div>
+</div>
+
+<form id="returnHomeForm" action="/home" method="GET" class="text-center mb-3">
+    <button type="submit" class="btn btn-primary btn-lg">Volver</button>
+</form>
