@@ -269,11 +269,11 @@ const searchPokemonData = () => {
 
         // Naturaleza
         const natureSelector = document.getElementById("nature-selector");
-        natureSelector.addEventListener("change", () => {
-
-        });
 
         // Estadisticas
+        const setZeroClass = document.getElementsByClassName('set-zero');
+        for (let elem of setZeroClass) elem.value = 0;
+        
         const hpStat = document.getElementById("hpStat");
         const hpEV = parseInt(getValueByID("inputEVhp"));
         const hpIV = parseInt(getValueByID("inputIVhp"));

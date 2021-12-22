@@ -4,6 +4,7 @@ const bodyParser = require('body-parser');
 const fetchFunctions = require('./modulos/fetchFunctions');
 const databaseFunctions = require('./modulos/databaseFunctions');
 const mathFunctions = require('./modulos/mathFunctions');
+const dataArrays = require("./modulos/dataArrays");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -53,7 +54,6 @@ io.on('connection', client => {
         if (connectedToChat) {
             client.leave(connectedToChat);
         }
-        console.log(client);
         const chatID = `${data.ID_Chat}`;
         connectedToChat = chatID;
         client.join(chatID);
@@ -161,7 +161,7 @@ app.get('/teambuilder', (req, res) => {
 app.get('/teambuilder/create', (req, res) => {
     if (req.session.user) {
         res.render('createTeam', {
-            user: dataArrays.req.session.user,
+            user: req.session.user,
             pokemonList: dataArrays.pokemonList,
             naturesList: dataArrays.naturesList,
             itemsList: dataArrays.itemsList
@@ -436,7 +436,7 @@ app.put('/lobby/selectTeam', async (req, res) => {
     const team = await databaseFunctions.getTeamByID(ID_Team);
     const battleTeam = await Promise.all(team.pokemon.map(async pokemon => {
         const pokemonTypes = pokemon.types.map(poketype => {
-            dataArrays.typesList.find(type => poketype.name == type.name);
+            dataArrays.allTypes.find(type => poketype.name == type.name);
         });
         const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
 
