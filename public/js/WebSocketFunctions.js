@@ -1,7 +1,7 @@
 const socket = io();
 
 socket.on('connect', () => {
-    console.log("Hola");
+    //console.log("Hola");
 });
 
 socket.on('chat-message', message => {
@@ -9,7 +9,7 @@ socket.on('chat-message', message => {
     const option = document.createElement("li");
     option.innerHTML = `<b>${message.userSender}:</b> ${message.messageContent}`;
     messagesDiv.append(option);
-    document.getElementById("messageToSend").value = "";
+    if (chatDiv.dataset.userSender == message.userSender) document.getElementById("messageToSend").value = "";
 });
 
 socket.on('start-battle', battle => {

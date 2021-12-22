@@ -66,8 +66,8 @@ io.on('connection', client => {
             userSender: userSender,
             messageContent: messageContent
         }
-        await databaseFunctions.addMessageToChat(ID_Chat, message);
         io.to(`${ID_Chat}`).emit('chat-message', message);
+        await databaseFunctions.addMessageToChat(ID_Chat, message);
     });
 
     client.on('join-battle', async data => {

@@ -499,7 +499,7 @@ const modifyTeamName = (elem) => {
         newName: elem.parentElement.children[0].value
     }
     elem.parentElement.innerHTML = `
-        <h4>${object.newName}</h4>
+        <h4 class="text-start">${object.newName}</h4>
     `;
     divTeam.children[0].children[2].children[0].disabled = false;
     ajax("PUT", "/teambuilder/modifyTeamName", object, (res) => {
@@ -518,6 +518,10 @@ const modifyTeamName = (elem) => {
 const deletePokemon = (elem) => {
     const pokemonDiv = elem.parentElement;
     const divTeam = pokemonDiv.parentElement.parentElement;
+    console.log(divTeam.children.length);
+    if (divTeam.children.length == 2) {
+        return createErrorModal("errorDeletePokemonModal", "No puede borrar el último Pokémon del equipo. En su lugar, borre el equipo.");
+    }
     const object = {
         ID_Team: parseInt(divTeam.dataset.id),
         pokemonNumber: parseInt(pokemonDiv.dataset.number)
@@ -527,13 +531,13 @@ const deletePokemon = (elem) => {
         switch (res.success) {
             case "successful":
                 createSuccessModal("deletePokemonModal", "El Pokémon fue borrado satisfactoriamente.");
-                pokemonDiv.remove();
+                pokemonDiv.parentElement.remove();
                 break;
             case "error":
                 createErrorModal("errorDeletePokemonModal", "Hubo un error al intentar borrar el Pokémon. Inténtelo nuevamente más tarde.");
                 break;
         }
-    });
+    })
 }
 
 const showPokemonCreator = (elem) => {
