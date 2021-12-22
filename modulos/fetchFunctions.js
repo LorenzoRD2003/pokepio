@@ -1,4 +1,4 @@
-const fs = require("fs");
+const dataArrays = require("./dataArrays");
 
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 
@@ -94,8 +94,7 @@ exports.allTypesList = async () => {
 exports.searchPokemonData = async (pokemon) => {
     const originalObject = await obtenerPokemon(pokemon);
     const name = pokemon;
-    const allTypes = JSON.parse(fs.readFileSync("./files/allTypesList.json", "utf-8"));
-    const types = allTypes.filter(type => originalObject.types.find(elem => type.name == elem.type.name));
+    const types = dataArrays.allTypes.filter(type => originalObject.types.find(elem => type.name == elem.type.name));
     const abilities = await Promise.all(
         originalObject.abilities.map(async abilityID => {
             const ability = await funcionFetch(abilityID.ability.url);
@@ -109,8 +108,7 @@ exports.searchPokemonData = async (pokemon) => {
         })
     );
     const filteredAbilities = abilities.filter(untilThirdGen);
-    const allMoves = JSON.parse(fs.readFileSync("./files/allMovesList.json", "utf-8"));
-    const pokemonMoves = allMoves.filter(move => originalObject.moves.find(elem => move.name == elem.move.name));
+    const pokemonMoves = dataArrays.allMoves.filter(move => originalObject.moves.find(elem => move.name == elem.move.name));
     const filteredMoves = pokemonMoves.filter(untilThirdGen);
     const image = originalObject.sprites.front_default;
     const shinyImage = originalObject.sprites.front_shiny;

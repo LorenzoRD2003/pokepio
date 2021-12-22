@@ -4,7 +4,6 @@ const bodyParser = require('body-parser');
 const fetchFunctions = require('./modulos/fetchFunctions');
 const databaseFunctions = require('./modulos/databaseFunctions');
 const mathFunctions = require('./modulos/mathFunctions');
-const sleep = mathFunctions.sleep;
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -161,14 +160,11 @@ app.get('/teambuilder', (req, res) => {
 });
 app.get('/teambuilder/create', (req, res) => {
     if (req.session.user) {
-        const pokemonList = JSON.parse(fs.readFileSync("./files/allPokemonList.json", "utf-8"));
-        const naturesList = JSON.parse(fs.readFileSync("./files/allNaturesList.json", "utf-8"));
-        const itemsList = JSON.parse(fs.readFileSync("./files/allItemsList.json", "utf-8"));
         res.render('createTeam', {
-            user: req.session.user,
-            pokemonList: pokemonList,
-            naturesList: naturesList,
-            itemsList: itemsList
+            user: dataArrays.req.session.user,
+            pokemonList: dataArrays.pokemonList,
+            naturesList: dataArrays.naturesList,
+            itemsList: dataArrays.itemsList
         });
     } else {
         res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
@@ -180,10 +176,9 @@ app.get('/createAccount', (req, res) => {
 });
 app.get('/home/modifyUserData', (req, res) => {
     if (req.session.user) {
-        const pokemonList = JSON.parse(fs.readFileSync("./files/allPokemonList.json", "utf-8"));
         res.render('modifyUserData', {
             user: req.session.user,
-            pokemonList: pokemonList
+            pokemonList: dataArrays.pokemonList
         });
     } else {
         res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
@@ -393,14 +388,11 @@ app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res) => {
         if (pokemonAmount == 6) {
             res.send({ success: "sixPokemon" })
         } else {
-            const pokemonList = JSON.parse(fs.readFileSync("./files/allPokemonList.json", "utf-8"));
-            const naturesList = JSON.parse(fs.readFileSync("./files/allNaturesList.json", "utf-8"));
-            const itemsList = JSON.parse(fs.readFileSync("./files/allItemsList.json", "utf-8"));
             res.send({
                 success: "successful",
-                pokemonList: pokemonList,
-                naturesList: naturesList,
-                itemsList: itemsList
+                pokemonList: dataArrays.pokemonList,
+                naturesList: dataArrays.naturesList,
+                itemsList: dataArrays.itemsList
             });
         }
     } catch (err) {
@@ -442,19 +434,16 @@ app.get('/lobby/getChat', async (req, res) => {
 app.put('/lobby/selectTeam', async (req, res) => {
     const ID_Team = req.body.ID_Team;
     const team = await databaseFunctions.getTeamByID(ID_Team);
-    const typesList = JSON.parse(fs.readFileSync("./files/allTypesList.json", "utf-8"));
-    const naturesList = JSON.parse(fs.readFileSync("./files/allNaturesList.json", "utf-8"));
-    const allMoves = JSON.parse(fs.readFileSync("./files/allMovesList.json", "utf-8"));
     const battleTeam = await Promise.all(team.pokemon.map(async pokemon => {
         const pokemonTypes = pokemon.types.map(poketype => {
-            typesList.find(type => poketype.name == type.name);
+            dataArrays.typesList.find(type => poketype.name == type.name);
         });
-        const pokemonNature = naturesList.find(nature => nature.name == pokemon.nature);
+        const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
 
-        const move1 = allMoves.find(move => move.id == pokemon.moves[0]);
-        const move2 = allMoves.find(move => move.id == pokemon.moves[1]);
-        const move3 = allMoves.find(move => move.id == pokemon.moves[2]);
-        const move4 = allMoves.find(move => move.id == pokemon.moves[3]);
+        const move1 = dataArrays.allMoves.find(move => move.id == pokemon.moves[0]);
+        const move2 = dataArrays.allMoves.find(move => move.id == pokemon.moves[1]);
+        const move3 = dataArrays.allMoves.find(move => move.id == pokemon.moves[2]);
+        const move4 = dataArrays.allMoves.find(move => move.id == pokemon.moves[3]);
 
         const baseStats = await fetchFunctions.getPokemonBaseStats(pokemon.name);
         const hpStat = mathFunctions.calculateHP(baseStats.hp, pokemon.ev.hp, pokemon.iv.hp);
