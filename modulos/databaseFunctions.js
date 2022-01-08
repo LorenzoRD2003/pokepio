@@ -209,7 +209,10 @@ exports.createBattle = async (ID_User1) => {
         values (${ID_User1});
     `);
 
-    return (await MySQL.realizarQuery(`select max(ID_Battle) as id from ${tablaBatallas}`))[0].id;
+    return (await MySQL.realizarQuery(`
+        select max(ID_Battle) as id from ${tablaBatallas}
+        where ID_User1 = ${ID_User1};
+    `))[0].id;
 }
 
 exports.addSecondUserToBattle = async (ID_Battle, ID_User2) => {

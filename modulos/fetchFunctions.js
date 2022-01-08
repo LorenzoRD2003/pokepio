@@ -15,10 +15,30 @@ exports.obtenerPokemon = obtenerPokemon;
 const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 const untilThirdGen = (elem) => elem.generation == "generation-i" || elem.generation == "generation-ii" || elem.generation == "generation-iii";
 exports.allPokemonList = async () => {
-    const pokemonList = (await funcionFetch("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
-    const namesList = pokemonList.map(pokemon => capitalizeFirstLetter(pokemon.name));
-    const orderedNamesList = namesList.sort();
-    return orderedNamesList;
+    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
+    const pokemonList = await Promise.all(
+        namesList.map(async pokemonIndex => {
+            const pokemon = await funcionFetch(pokemonIndex.url);
+            console.log(pokemon.name);
+            return {
+                name: capitalizeFirstLetter(pokemon.name),
+                types: pokemon.types.map(index => index.type.name),
+                abilities: pokemon.abilities.map(index => index.ability.name),
+                moves: pokemon.moves.map(index => index.move.name),
+                image: pokemon.sprites.front_default,
+                shinyImage: pokemon.sprites.front_shiny,
+                base_stats: {
+                    hp: pokemon.stats[0].base_stat,
+                    atk: pokemon.stats[1].base_stat,
+                    def: pokemon.stats[2].base_stat,
+                    spa: pokemon.stats[3].base_stat,
+                    spd: pokemon.stats[4].base_stat,
+                    spe: pokemon.stats[5].base_stat
+                }
+            }
+        })
+    );
+    return pokemonList;
 };
 exports.allNaturesList = async () => {
     const namesList = (await funcionFetch("https://pokeapi.co/api/v2/nature?limit=25")).results;
@@ -90,41 +110,38 @@ exports.allTypesList = async () => {
     );
     return typesList;
 }
-
-exports.searchPokemonData = async (pokemon) => {
-    const originalObject = await obtenerPokemon(pokemon);
-    const name = pokemon;
-    const types = dataArrays.allTypes.filter(type => originalObject.types.find(elem => type.name == elem.type.name));
-    const abilities = await Promise.all(
-        originalObject.abilities.map(async abilityID => {
-            const ability = await funcionFetch(abilityID.ability.url);
-            const description = ability.effect_entries.find(entry => entry.language.name == "en").effect;
+exports.allAbilitiesList = async () => {
+    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/ability?limit=2000")).results;
+    const abilitiesList = await Promise.all(
+        namesList.map(async abilityIndex => {
+            const ability = await funcionFetch(abilityIndex.url);
+            const effect_entry = ability.effect_entries[1];
             return {
                 id: ability.id,
                 name: ability.name,
-                description: description,
+                effect: (effect_entry) ? effect_entry.short_effect : null,
                 generation: ability.generation.name
-            };
+            }
         })
     );
-    const filteredAbilities = abilities.filter(untilThirdGen);
-    const pokemonMoves = dataArrays.allMoves.filter(move => originalObject.moves.find(elem => move.name == elem.move.name));
-    const filteredMoves = pokemonMoves.filter(untilThirdGen);
-    const image = originalObject.sprites.front_default;
-    const shinyImage = originalObject.sprites.front_shiny;
-    const base_stats = {
-        hp: originalObject.stats[0].base_stat,
-        atk: originalObject.stats[1].base_stat,
-        def: originalObject.stats[2].base_stat,
-        spa: originalObject.stats[3].base_stat,
-        spd: originalObject.stats[4].base_stat,
-        spe: originalObject.stats[5].base_stat
-    }
+    return abilitiesList.filter(untilThirdGen);
+}
+
+exports.searchPokemonData = async (pokemon) => {
+    pokemon = capitalizeFirstLetter(pokemon);
+    const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
+    const name = pkmnFound.name;
+    const types = pkmnFound.types.map(pkmnType => dataArrays.allTypes.find(type => type.name == pkmnType));
+    const abilities = pkmnFound.abilities.map(pkmnAbility => dataArrays.allAbilities.find(ability => ability.name == pkmnAbility)).filter(ability => ability);
+    const moves = pkmnFound.moves.map(pkmnMove => dataArrays.allMoves.find(move => move.name == pkmnMove)).filter(move => move);
+    const image = pkmnFound.image;
+    const shinyImage = pkmnFound.shinyImage;
+    const base_stats = pkmnFound.base_stats;
     return {
         name: name,
         types: types,
-        abilities: filteredAbilities,
-        moves: filteredMoves,
+        abilities: abilities,
+        moves: moves,
         image: image,
         shinyImage: shinyImage,
         base_stats: base_stats

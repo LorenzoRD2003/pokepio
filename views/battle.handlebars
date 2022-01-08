@@ -15,10 +15,10 @@
                 <h6>Pokémon restantes: <b id="user1pokemonLeft">{{pokemonLeft}}</b></h6>
             </div>
             <div class="form-group mb-5">
-                <button class="btn btn-primary">Activar temporizador</button>
+                <button id="timeButton" class="btn btn-primary" disabled>Activar temporizador</button>
             </div>
             <div class="form-group mb-3">
-                <button class="btn btn-danger" onclick="surrenderButton(this)">Rendirse</button>
+                <button id="surrenderButton" class="btn btn-danger" onclick="surrenderButton(this)" disabled>Rendirse</button>
             </div>
         </div>
         <div id="beforeOpponentHasConnected" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-6 text-center">
@@ -116,5 +116,5 @@
             </div>
         </div>
     </div>
-    <form id="returnToLobbyForm" action="/lobby" method="GET"></form>
+    <form id="returnToLobbyForm" action="/battle/returnLobby" method="GET"></form>
 </body>

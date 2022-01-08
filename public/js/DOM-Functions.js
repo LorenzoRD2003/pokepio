@@ -142,7 +142,7 @@ const searchPokemonData = () => {
         res.abilities.forEach(ability => {
             const optionElem = document.createElement("option");
             optionElem.textContent = capitalizeFirstLetter(ability.name);
-            optionElem.dataset.description = ability.description;
+            optionElem.dataset.description = ability.effect;
             pokemonAbilitiesList.append(optionElem);
         });
         pokemonAbilitiesList.addEventListener("change", (event) => {
@@ -274,19 +274,19 @@ const searchPokemonData = () => {
         const setZeroClass = document.getElementsByClassName('set-zero');
         for (let elem of setZeroClass) elem.value = 0;
         
+        
         const hpStat = document.getElementById("hpStat");
         const hpEV = parseInt(getValueByID("inputEVhp"));
         const hpIV = parseInt(getValueByID("inputIVhp"));
-        hpStat.textContent = `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`;
+        hpStat.textContent = (res.name != "shedinja") ? `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`: `PV: 1`;    
         const hpElemUpdaters = document.getElementsByClassName("hp-updater");
         for (let elem of hpElemUpdaters) {
             elem.addEventListener("input", () => {
                 const hpEV = parseInt(getValueByID("inputEVhp"));
                 const hpIV = parseInt(getValueByID("inputIVhp"));
-                hpStat.textContent = `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`;
+                if (res.name != "shedinja") hpStat.textContent = `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`;
             });
         }
-        hpStat.textContent = `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`;
 
         const atkStat = document.getElementById("atkStat");
         const atkEV = parseInt(getValueByID("inputEVatk"));
@@ -552,7 +552,7 @@ const showPokemonCreator = (elem) => {
                 document.getElementById("selectPokemonDiv").hidden = false;
                 document.getElementById("teamNameID").textContent = `Nombre del Equipo: ${object.team_name}`;
                 const pokemonList = document.getElementById("pokemon-selector");
-                res.pokemonList.forEach(pokemon => pokemonList.innerHTML += `<option>${pokemon}</option>`);
+                res.pokemonNamesList.forEach(pokemon => pokemonList.innerHTML += `<option>${pokemon}</option>`);
                 const naturesList = document.getElementById("nature-selector");
                 res.naturesList.forEach(nature => {
                     if (nature.stat_up) {

@@ -1,10 +1,11 @@
-const express = require('express'); //Para el manejo del servidor Web
+const express = require('express');
 const exphbs = require('express-handlebars');
 const bodyParser = require('body-parser');
 const fetchFunctions = require('./modulos/fetchFunctions');
 const databaseFunctions = require('./modulos/databaseFunctions');
 const mathFunctions = require('./modulos/mathFunctions');
 const dataArrays = require("./modulos/dataArrays");
+const battleFunctions = require("./modulos/battleFunctions");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -30,7 +31,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.engine('handlebars', exphbs({ defaultLayout: 'main' }));
 app.set('view engine', 'handlebars');
-app.use(session({ secret: 'adfsadsafdsafjhbsdfahbjfjhfhewqfwebjhfqjhwqefjhefwqjwefqjefwqwqf', resave: true, saveUninitialized: true }));
+app.use(session({
+    secret: 'adfsadsafdsafjhbsdfahbjfjhfhewqfwebjhfqjhwqefjhefwqjwefqjefwqwqf',
+    resave: true,
+    saveUninitialized: true
+}));
 
 const LISTEN_PORT = 3000;
 const server = app.listen(process.env.PORT || LISTEN_PORT, () => console.log('Servidor NodeJS corriendo.'));
@@ -40,129 +45,127 @@ const allBattles = new Array(100);
 for (let i = 0; i < allBattles.length; i++) {
     allBattles[i] = {
         players: 0,
-        dbID: null,
+        id: null,
+        room: null,
         user1: null,
         user2: null,
         result: ""
     };
 }
 io.on('connection', client => {
-    let connectedToChat = "";
-    let connectedToBattle = "";
+    let chat = null;
+    let battle = null;
 
     client.on('join-chat', data => {
-        if (connectedToChat) {
-            client.leave(connectedToChat);
-        }
-        const chatID = `${data.ID_Chat}`;
-        connectedToChat = chatID;
-        client.join(chatID);
-        io.to(chatID).emit('join-chat', null);
+        if (chat) client.leave(chat);
+        chat = `Chat-${data.ID_Chat}`;
+        client.join(chat);
+        io.to(chat).emit('join-chat', null);
     });
-
     client.on('chat-message', async data => {
         const { ID_Chat, userSender, messageContent } = JSON.parse(data);
         const message = {
             userSender: userSender,
             messageContent: messageContent
         }
-        io.to(`${ID_Chat}`).emit('chat-message', message);
+        io.to(chat).emit('chat-message', message);
         await databaseFunctions.addMessageToChat(ID_Chat, message);
     });
 
-    client.on('join-battle', async data => {
-        const foundBattle = allBattles.find(battle => battle.players < 2);
-        foundBattle.players++;
-        console.log(client.rooms);
-        if (!foundBattle.user1) {
-            foundBattle.dbID = await databaseFunctions.createBattle(data.id);
-            const battleID = `B${foundBattle.dbID}`;
-            connectedToBattle = battleID;
-            client.join(battleID);
-            foundBattle.user1 = data;
-        } else if (!foundBattle.user2) {
-            await databaseFunctions.addSecondUserToBattle(foundBattle.dbID, data.id);
-            const battleID = `B${foundBattle.dbID}`;
-            connectedToBattle = battleID;
-            client.join(battleID);
-            foundBattle.user2 = data;
-            io.to(battleID).emit('start-battle', foundBattle);
+    client.on('join-battle', async user => {
+        client.username = user.username;
+        battle = allBattles.find(battle => battle.user1 ? battle.players < 2 && battle.user1.username != client.username : battle.players < 2);
+        battle.players++;
+        if (!battle.user1) {
+            battle.id = await databaseFunctions.createBattle(user.id);
+            battle.room = `Battle-${battle.id}`;
+            client.join(battle.room);
+            battle.user1 = user;
+        } else if (!battle.user2) {
+            await databaseFunctions.addSecondUserToBattle(battle.id, user.id);
+            client.join(battle.room);
+            battle.user2 = user;
+            io.to(battle.room).emit('start-battle', battle);
         }
     });
-
     client.on('select-first-pokemon', async data => {
-        const foundBattle = allBattles.find(battle => data.battleID == battle.dbID);
-        if (data.username == foundBattle.user1.username) {
-            foundBattle.user1.hasPlayed = true;
-            foundBattle.user1.currentPokemonIndex = data.index;
+        if (client.username == battle.user1.username) {
+            battle.user1.hasPlayed = true;
+            battle.user1.currentPokemonIndex = data.index;
         } else {
-            foundBattle.user2.hasPlayed = true;
-            foundBattle.user2.currentPokemonIndex = data.index;
+            battle.user2.hasPlayed = true;
+            battle.user2.currentPokemonIndex = data.index;
         }
-        if (foundBattle.user1.hasPlayed && foundBattle.user2.hasPlayed) {
-            foundBattle.user1.hasPlayed = false;
-            foundBattle.user2.hasPlayed = false;
-            const battleID = `B${foundBattle.dbID}`;
-            io.to(battleID).emit('select-first-pokemon', foundBattle);
+        if (battle.user1.hasPlayed && battle.user2.hasPlayed) {
+            battle.user1.hasPlayed = false;
+            battle.user2.hasPlayed = false;
+            io.to(battle.room).emit('select-first-pokemon', battle);
         }
     });
-
-    client.on('surrender', async data => {
-        let foundBattle = allBattles.find(battle => data.battleID == battle.dbID);
+    client.on('surrender', async () => {
         let winner, loser, result;
-        if (data.username == foundBattle.user1.username) {
-            winner = foundBattle.user2.username;
-            loser = foundBattle.user1.username;
-            result = `${foundBattle.user2.battleTeam.length} - ${foundBattle.user1.battleTeam.length}`;
+        loser = client.username;
+        if (loser == battle.user1.username) {
+            winner = battle.user2.username;
+            result = `${battle.user2.battleTeam.length} - ${battle.user1.battleTeam.length}`;
         } else {
-            winner = foundBattle.user1.username;
-            loser = foundBattle.user2.username;
-            result = `${foundBattle.user1.battleTeam.length} - ${foundBattle.user2.battleTeam.length}`;
+            winner = battle.user1.username;
+            result = `${battle.user1.battleTeam.length} - ${battle.user2.battleTeam.length}`;
         }
-        await databaseFunctions.finishBattle(foundBattle.dbID, winner, loser, result);
-        const battleID = `B${foundBattle.dbID}`;
-        foundBattle = {
-            players: 0,
-            dbID: null,
-            user1: null,
-            user2: null,
-            result: ""
-        };
-        io.to(battleID).emit('surrender', {
+        await databaseFunctions.finishBattle(battle.id, winner, loser, result);
+        console.log(battle);
+        io.to(battle.room).emit('surrender', {
             winner: winner,
             result: result
         });
+        battleFunctions.resetBattle(battle);
+        battle = null;
     });
 
-    client.on('disconnect', () => {
-        connectedToChat = "";
-        connectedToBattle = "";
+    client.on('disconnect', async () => {
+        chat = null;
+        if (battle) {
+            if (battle.user2) {
+                let winner, loser, result;
+                loser = client.username;
+                if (loser == battle.user1.username) {
+                    winner = battle.user2.username;
+                    result = `${battle.user2.battleTeam.length} - ${battle.user1.battleTeam.length}`;
+                } else {
+                    winner = battle.user1.username;
+                    result = `${battle.user1.battleTeam.length} - ${battle.user2.battleTeam.length}`;
+                }
+                await databaseFunctions.finishBattle(battle.id, winner, loser, result);
+                io.to(battle.room).emit('surrender', {
+                    winner: winner,
+                    result: result
+                });
+                battleFunctions.resetBattle(battle);
+            }
+            battle = null;
+        }
     })
 });
 
 app.get('/', async (req, res) => {
-    req.session.destroy();
+    const pokemonList = await fetchFunctions.allPokemonList();
+    fs.writeFile("./files/allPokemonList.json", JSON.stringify(pokemonList), err => console.log(err));
+    if (req.session.user) return res.redirect('/home');
     res.render('login', null);
 });
 app.get('/home', async (req, res) => {
-    if (req.session.user) {
-        res.render('home', { user: req.session.user, teams: req.session.teams });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('home', { user: req.session.user, teams: req.session.teams });
 });
 app.get('/teambuilder', (req, res) => {
-    if (req.session.user) {
-        res.render('teambuilder', { user: req.session.user, teams: req.session.teams });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('teambuilder', { user: req.session.user, teams: req.session.teams });
 });
 app.get('/teambuilder/create', (req, res) => {
     if (req.session.user) {
         res.render('createTeam', {
             user: req.session.user,
-            pokemonList: dataArrays.pokemonList,
+            pokemonNamesList: dataArrays.pokemonNamesList,
             naturesList: dataArrays.naturesList,
             itemsList: dataArrays.itemsList
         });
@@ -178,18 +181,15 @@ app.get('/home/modifyUserData', (req, res) => {
     if (req.session.user) {
         res.render('modifyUserData', {
             user: req.session.user,
-            pokemonList: dataArrays.pokemonList
+            pokemonNamesList: dataArrays.pokemonNamesList
         });
     } else {
         res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
     }
 });
 app.get('/home/modifyPassword', (req, res) => {
-    if (req.session.user) {
-        res.render('modifyPassword', { user: req.session.user });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('modifyPassword', { user: req.session.user });
 });
 app.post('/createAccount/create', async (req, res) => {
     try {
@@ -220,6 +220,7 @@ app.post('/login', async (req, res) => {
                 req.session.user = user;
                 const ID_User = req.session.user.ID_User;
                 req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
+                req.session.activeBattle = false;
                 res.redirect('/home');
                 break;
             case "wrong-password":
@@ -237,6 +238,10 @@ app.post('/login', async (req, res) => {
         res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
     }
 });
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/');
+})
 app.put('/home/modifyUserData/modify', async (req, res) => {
     try {
         const ID_User = req.session.user.ID_User;
@@ -390,7 +395,7 @@ app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res) => {
         } else {
             res.send({
                 success: "successful",
-                pokemonList: dataArrays.pokemonList,
+                pokemonNamesList: dataArrays.pokemonNamesList,
                 naturesList: dataArrays.naturesList,
                 itemsList: dataArrays.itemsList
             });
@@ -401,11 +406,8 @@ app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res) => {
     }
 });
 app.get('/lobby', async (req, res) => {
-    if (req.session.user) {
-        res.render('lobby', { user: req.session.user, teams: req.session.teams });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('lobby', { user: req.session.user, teams: req.session.teams });
 });
 app.get('/lobby/getChat', async (req, res) => {
     try {
@@ -430,7 +432,6 @@ app.get('/lobby/getChat', async (req, res) => {
         res.send({ success: "error" });
     }
 });
-
 app.put('/lobby/selectTeam', async (req, res) => {
     const ID_Team = req.body.ID_Team;
     const team = await databaseFunctions.getTeamByID(ID_Team);
@@ -446,7 +447,7 @@ app.put('/lobby/selectTeam', async (req, res) => {
         const move4 = dataArrays.allMoves.find(move => move.id == pokemon.moves[3]);
 
         const baseStats = await fetchFunctions.getPokemonBaseStats(pokemon.name);
-        const hpStat = mathFunctions.calculateHP(baseStats.hp, pokemon.ev.hp, pokemon.iv.hp);
+        const hpStat = (pokemon.name != "shedinja") ? mathFunctions.calculateHP(baseStats.hp, pokemon.ev.hp, pokemon.iv.hp) : 1;
         let natureMultiplier = 1;
 
         if (pokemonNature.statUp == "attack") natureMultiplier = 1.1;
@@ -554,20 +555,21 @@ app.put('/lobby/selectTeam', async (req, res) => {
     req.session.battleTeam = battleTeam;
     res.send(null);
 });
-
 app.get('/battle', async (req, res) => {
-    if (req.session.user) {
-        res.render('battle', {
-            username: req.session.user.username,
-            profile_photo: req.session.user.profile_photo,
-            battleTeam: req.session.battleTeam,
-            pokemonLeft: req.session.battleTeam.length
-        });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    if (req.session.activeBattle) return res.render('lobby', {
+        user: req.session.user,
+        teams: req.session.teams,
+        error: "No puede entrar a otra batalla si ya está en una."
+    });
+    res.render('battle', {
+        username: req.session.user.username,
+        profile_photo: req.session.user.profile_photo,
+        battleTeam: req.session.battleTeam,
+        pokemonLeft: req.session.battleTeam.length
+    });
+    req.session.activeBattle = true;
 });
-
 app.get('/battle/getBattleTeam', async (req, res) => {
     res.send({
         id: req.session.user.ID_User,
@@ -578,4 +580,8 @@ app.get('/battle/getBattleTeam', async (req, res) => {
         hasPlayed: false,
         timeLeft: 120
     });
+});
+app.get('/battle/returnLobby', (req, res) => {
+    req.session.activeBattle = false;
+    res.redirect('/lobby');
 });

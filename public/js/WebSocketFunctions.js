@@ -13,15 +13,9 @@ socket.on('chat-message', message => {
 });
 
 socket.on('start-battle', battle => {
-    document.getElementById("divBattle").dataset.idBattle = battle.dbID;
     const username = document.getElementById("username").innerText;
     const beforeBattleOpponentPokemon = document.getElementById("beforeBattleOpponentPokemon");
-    let opponent;
-    if (username == battle.user1.username) {
-        opponent = battle.user2;
-    } else {
-        opponent = battle.user1;
-    }
+    let opponent = (username == battle.user1.username) ? battle.user2 : battle.user1;
     opponent.battleTeam.forEach(pokemon => {
         const li = document.createElement("li");
         li.innerHTML = `${capitalizeFirstLetter(pokemon.name)}<img class="beforeBattleSprite" src="${pokemon.sprite}">`;
@@ -35,12 +29,14 @@ socket.on('start-battle', battle => {
     document.getElementById("beforeOpponentHasConnected").hidden = true;
     document.getElementById("beforeBattleShowUser1").hidden = false;
     document.getElementById("beforeBattleShowUser2").hidden = false;
+
+    document.getElementById("timeButton").disabled = false;
+    document.getElementById("surrenderButton").disabled = false;
     pokemonBattleTheme.play();
     pokemonBattleTheme.loop=true;
 });
 
 socket.on('select-first-pokemon', battle => {
-    console.log(battle);
     const username = document.getElementById("username").innerText;
     let player, opponent;
     if (username == battle.user1.username) {
@@ -93,8 +89,8 @@ socket.on('select-first-pokemon', battle => {
     document.getElementById("pokemon2Image").srcset = opponentPokemon.sprite;
     document.getElementById("pokemon2HP").innerText = `PV: ${opponentPokemon.stats.hp.currentHP}`;
 
-    addMessageToServerMessages(`${player.username} elije a ${capitalizeFirstLetter(playerPokemon.name)}`);
-    addMessageToServerMessages(`${opponent.username} elije a ${capitalizeFirstLetter(opponentPokemon.name)}`);
+    addMessageToServerMessages(`${player.username} elige a ${capitalizeFirstLetter(playerPokemon.name)}.`);
+    addMessageToServerMessages(`${opponent.username} elige a ${capitalizeFirstLetter(opponentPokemon.name)}.`);
 
     document.getElementById("beforeBattleShowUser1").hidden = true;
     document.getElementById("beforeBattleShowUser2").hidden = true;
@@ -103,6 +99,7 @@ socket.on('select-first-pokemon', battle => {
 });
 
 socket.on('surrender', battleResult => {
+    console.log(1);
     createModal(
         "finishedBattleModal",
         "Final de la batalla",
@@ -165,22 +162,14 @@ const joinBattle = () => {
 }
 
 const selectFirstPokemon = index => {
-    const username = document.getElementById("username").innerText;
-    const dbID = document.getElementById("divBattle").dataset.idBattle;
     const selectPokemonButtons = document.getElementsByClassName("btn-selectPokemonAtStart");
     for(let button of selectPokemonButtons) {
         button.disabled = true;
     }
-    socket.emit("select-first-pokemon", {
-        username: username,
-        battleID: dbID,
-        index: index
-    });
+    socket.emit("select-first-pokemon", { index: index });
 }
 
 const surrenderButton = (button) => {
-    const username = document.getElementById("username").innerText;
-    const dbID = document.getElementById("divBattle").dataset.idBattle;
     createModal(
         "surrenderButtonModal",
         "¡Alerta!",
@@ -188,10 +177,7 @@ const surrenderButton = (button) => {
         "Aceptar",
         () => {
             button.disabled = true;
-            socket.emit("surrender", {
-                username: username,
-                battleID: dbID
-            });
+            socket.emit("surrender");
         },
         "Cancelar",
         $(`#surrenderButtonModal`).modal("hide")
