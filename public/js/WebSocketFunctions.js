@@ -11,11 +11,18 @@ socket.on('chat-message', message => {
     messagesDiv.append(option);
     if (chatDiv.dataset.userSender == message.userSender) document.getElementById("messageToSend").value = "";
 });
-
+let player, opponent;
 socket.on('start-battle', battle => {
+    socket.emit('opponent-confirm');
     const username = document.getElementById("username").innerText;
     const beforeBattleOpponentPokemon = document.getElementById("beforeBattleOpponentPokemon");
-    let opponent = (username == battle.user1.username) ? battle.user2 : battle.user1;
+    if (username == battle.user1.username) {
+        player = battle.user1;
+        opponent = battle.user2;
+    } else {
+        player = battle.user2;
+        opponent = battle.user1;
+    }
     opponent.battleTeam.forEach(pokemon => {
         const li = document.createElement("li");
         li.innerHTML = `${capitalizeFirstLetter(pokemon.name)}<img class="beforeBattleSprite" src="${pokemon.sprite}">`;
@@ -35,10 +42,8 @@ socket.on('start-battle', battle => {
     pokemonBattleTheme.play();
     pokemonBattleTheme.loop=true;
 });
-
 socket.on('select-first-pokemon', battle => {
     const username = document.getElementById("username").innerText;
-    let player, opponent;
     if (username == battle.user1.username) {
         player = battle.user1;
         opponent = battle.user2;
@@ -46,60 +51,63 @@ socket.on('select-first-pokemon', battle => {
         player = battle.user2;
         opponent = battle.user1;
     }
-    const playerPokemon = player.battleTeam[player.currentPokemonIndex];
-    document.getElementById("pokemon1Name").innerText = capitalizeFirstLetter(playerPokemon.name);
-    document.getElementById("pokemon1Image").srcset = playerPokemon.sprite;
-    document.getElementById("pokemon1HP").innerText = `PV: ${playerPokemon.stats.hp.currentHP}`;
-    document.getElementById("pokemon1Atk").innerText = `Ataque: ${playerPokemon.stats.atk.baseStat}`;
-    document.getElementById("pokemon1Def").innerText = `Defensa: ${playerPokemon.stats.def.baseStat}`;
-    document.getElementById("pokemon1Spa").innerText = `Ataque Especial: ${playerPokemon.stats.spa.baseStat}`;
-    document.getElementById("pokemon1Spd").innerText = `Defensa Especial: ${playerPokemon.stats.spe.baseStat}`;
-    document.getElementById("pokemon1Spe").innerText = `Velocidad: ${playerPokemon.stats.spd.baseStat}`;
+    document.getElementById("pokemon1Name").innerText = capitalizeFirstLetter(player.activePokemon.name);
+    document.getElementById("pokemon1Image").srcset = player.activePokemon.sprite;
+    document.getElementById("pokemon1HP").innerText = `PV: ${player.activePokemon.stats.hp.currentHP}`;
+    document.getElementById("pokemon1Atk").innerText = `Ataque: ${player.activePokemon.stats.atk.baseStat}`;
+    document.getElementById("pokemon1Def").innerText = `Defensa: ${player.activePokemon.stats.def.baseStat}`;
+    document.getElementById("pokemon1Spa").innerText = `Ataque Especial: ${player.activePokemon.stats.spa.baseStat}`;
+    document.getElementById("pokemon1Spd").innerText = `Defensa Especial: ${player.activePokemon.stats.spd.baseStat}`;
+    document.getElementById("pokemon1Spe").innerText = `Velocidad: ${player.activePokemon.stats.spe.baseStat}`;
+    document.getElementById("pokemon1Ability").innerText = `Habilidad: ${capitalizeFirstLetter(player.activePokemon.ability)}`;
+    document.getElementById("pokemon1Item").innerText = (player.activePokemon.item) ? `Objeto: ${capitalizeFirstLetter(player.activePokemon.item)}` : "Objeto: (vacío)";
+    document.getElementById("pokemon1Status").innerText = `Estado: ${player.activePokemon.status}`;
+    player.activePokemon.types.forEach(type => document.getElementById("pokemon1Types").innerText += `${capitalizeFirstLetter(type.name)} `);
     const move1 = document.getElementById("move1");
-    if (playerPokemon.moves[0]) {
+    if (player.activePokemon.moves[0]) {
         move1.hidden = false;
-        move1.innerText = capitalizeFirstLetter(playerPokemon.moves[0].name);
+        move1.innerText = `${capitalizeFirstLetter(player.activePokemon.moves[0].name)} PP: ${player.activePokemon.moves[0].pp}`;
     } else {
         move1.hidden = true;
     }
     const move2 = document.getElementById("move2");
-    if (playerPokemon.moves[1]) {
+    if (player.activePokemon.moves[1]) {
         move2.hidden = false;
-        move2.innerText = capitalizeFirstLetter(playerPokemon.moves[1].name);
+        move2.innerText = `${capitalizeFirstLetter(player.activePokemon.moves[1].name)} PP: ${player.activePokemon.moves[1].pp}`;
     } else {
         move2.hidden = true;
     }
     const move3 = document.getElementById("move3");
-    if (playerPokemon.moves[2]) {
+    if (player.activePokemon.moves[2]) {
         move3.hidden = false;
-        move3.innerText = capitalizeFirstLetter(playerPokemon.moves[2].name);
+        move3.innerText = `${capitalizeFirstLetter(player.activePokemon.moves[2].name)} PP: ${player.activePokemon.moves[2].pp}`;
     } else {
         move3.hidden = true;
     }
     const move4 = document.getElementById("move4");
-    if (playerPokemon.moves[3]) {
+    if (player.activePokemon.moves[3]) {
         move4.hidden = false;
-        move4.innerText = capitalizeFirstLetter(playerPokemon.moves[3].name);
+        move4.innerText = `${capitalizeFirstLetter(player.activePokemon.moves[3].name)} PP: ${player.activePokemon.moves[3].pp}`;
     } else {
         move4.hidden = true;
     }
     
-    const opponentPokemon = opponent.battleTeam[opponent.currentPokemonIndex];
-    document.getElementById("pokemon2Name").innerText = capitalizeFirstLetter(opponentPokemon.name);
-    document.getElementById("pokemon2Image").srcset = opponentPokemon.sprite;
-    document.getElementById("pokemon2HP").innerText = `PV: ${opponentPokemon.stats.hp.currentHP}`;
+    document.getElementById("pokemon2Name").innerText = capitalizeFirstLetter(opponent.activePokemon.name);
+    document.getElementById("pokemon2Image").srcset = opponent.activePokemon.sprite;
+    document.getElementById("pokemon2HP").innerText = `PV: ${opponent.activePokemon.stats.hp.currentHP}`;
+    document.getElementById("pokemon2Status").innerText = `Estado: ${opponent.activePokemon.status}`;
+    opponent.activePokemon.types.forEach(type => document.getElementById("pokemon2Types").innerText += `${capitalizeFirstLetter(type.name)} `);
 
-    addMessageToServerMessages(`${player.username} elige a ${capitalizeFirstLetter(playerPokemon.name)}.`);
-    addMessageToServerMessages(`${opponent.username} elige a ${capitalizeFirstLetter(opponentPokemon.name)}.`);
+    addMessageToServerMessages(`${player.username} elige a ${capitalizeFirstLetter(player.activePokemon.name)}.`);
+    addMessageToServerMessages(`${opponent.username} elige a ${capitalizeFirstLetter(opponent.activePokemon.name)}.`);
 
     document.getElementById("beforeBattleShowUser1").hidden = true;
     document.getElementById("beforeBattleShowUser2").hidden = true;
     document.getElementById("inBattleShowUser1").hidden = false;
     document.getElementById("inBattleShowUser2").hidden = false;
 });
-
-socket.on('surrender', battleResult => {
-    console.log(1);
+socket.on('battle-end', battleResult => {
+    disableButton("surrenderButton");
     createModal(
         "finishedBattleModal",
         "Final de la batalla",
@@ -107,6 +115,19 @@ socket.on('surrender', battleResult => {
         "Aceptar",
         () => document.getElementById("returnToLobbyForm").submit()
     );
+});
+let isActiveTimeout = false;
+socket.on('started-timeout', () => {
+    disableButton("timeButton");
+    isActiveTimeout = true;
+    addMessageToServerMessages("Te quedan 120 segundos.");
+});
+socket.on('resumed-timeout', (username1, username2, time1, time2) => {
+    addMessageToServerMessages(`A ${username1} le quedan ${Math.round(time1 / 1000)} segundos.`);
+    addMessageToServerMessages(`A ${username2} le quedan ${Math.round(time2 / 1000)} segundos.`);
+});
+socket.on('finished-timeout', username => {
+    addMessageToServerMessages(`Se acabó el tiempo de ${username}.`);
 });
 
 const createChatWithUser = () => {
@@ -143,7 +164,6 @@ const createChatWithUser = () => {
         }
     });
 }
-
 const sendChatMessage = () => {
     const chatDiv = document.getElementById("chatDiv");
     const message = JSON.stringify({
@@ -160,27 +180,31 @@ const joinBattle = () => {
         socket.emit("join-battle", userData);
     });
 }
-
-const selectFirstPokemon = index => {
+const selectFirstPokemon = pkmnIndex => {
     const selectPokemonButtons = document.getElementsByClassName("btn-selectPokemonAtStart");
-    for(let button of selectPokemonButtons) {
-        button.disabled = true;
-    }
-    socket.emit("select-first-pokemon", { index: index });
+    for (let button of selectPokemonButtons) button.disabled = true;
+    pauseTimeout();
+    socket.emit("select-first-pokemon", pkmnIndex);
 }
-
-const surrenderButton = (button) => {
+const surrenderFromBattle = () => {
     createModal(
         "surrenderButtonModal",
         "¡Alerta!",
         "¿Está seguro de que quiere rendirse?",
         "Aceptar",
-        () => {
-            button.disabled = true;
-            socket.emit("surrender");
-        },
+        () => socket.emit("surrender"),
         "Cancelar",
         $(`#surrenderButtonModal`).modal("hide")
     );
 }
 
+const beginTimeout = () => socket.emit("start-counter");
+const pauseTimeout = () => {
+    if (isActiveTimeout) socket.emit("pause-timeout");
+}
+const selectTurnAction = moveIndex => {
+    const moveButtons = document.getElementsByClassName("btn-move");
+    for (let button of moveButtons) button.disabled = true;
+    pauseTimeout();
+    socket.emit("select-turn-action", player.activePokemon.moves[moveIndex]);
+}

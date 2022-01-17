@@ -223,7 +223,7 @@ exports.addSecondUserToBattle = async (ID_Battle, ID_User2) => {
     `);
 }
 
-exports.finishBattle = async (ID_Battle, winner, loser, result) => {
+exports.setBattleResults = async (ID_Battle, winner, loser, result) => {
     await MySQL.realizarQuery(`
         update ${tablaBatallas}
         set winner = '${winner}', loser = '${loser}', result = '${result}'

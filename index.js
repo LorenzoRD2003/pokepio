@@ -6,6 +6,7 @@ const databaseFunctions = require('./modulos/databaseFunctions');
 const mathFunctions = require('./modulos/mathFunctions');
 const dataArrays = require("./modulos/dataArrays");
 const battleFunctions = require("./modulos/battleFunctions");
+const credentials = require("./modulos/credentials");
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -32,7 +33,7 @@ app.use(bodyParser.json());
 app.engine('handlebars', exphbs({ defaultLayout: 'main' }));
 app.set('view engine', 'handlebars');
 app.use(session({
-    secret: 'adfsadsafdsafjhbsdfahbjfjhfhewqfwebjhfqjhwqefjhefwqjwefqjefwqwqf',
+    secret: credentials.sessionSecret,
     resave: true,
     saveUninitialized: true
 }));
@@ -49,12 +50,15 @@ for (let i = 0; i < allBattles.length; i++) {
         room: null,
         user1: null,
         user2: null,
-        result: ""
+        result: "",
+        activeTimer: false
     };
 }
 io.on('connection', client => {
     let chat = null;
     let battle = null;
+
+    let player, opponent;
 
     client.on('join-chat', data => {
         if (chat) client.leave(chat);
@@ -73,83 +77,102 @@ io.on('connection', client => {
     });
 
     client.on('join-battle', async user => {
-        client.username = user.username;
-        battle = allBattles.find(battle => battle.user1 ? battle.players < 2 && battle.user1.username != client.username : battle.players < 2);
+        battle = allBattles.find(battle => battle.user1 ? battle.players < 2 && battle.user1.username != user.username : battle.players < 2);
         battle.players++;
         if (!battle.user1) {
-            battle.id = await databaseFunctions.createBattle(user.id);
             battle.room = `Battle-${battle.id}`;
             client.join(battle.room);
             battle.user1 = user;
+            player = battle.user1;
+            opponent = battle.user2;
+            battle.id = await databaseFunctions.createBattle(user.id);
         } else if (!battle.user2) {
-            await databaseFunctions.addSecondUserToBattle(battle.id, user.id);
             client.join(battle.room);
             battle.user2 = user;
+            player = battle.user2;
+            opponent = battle.user1;
             io.to(battle.room).emit('start-battle', battle);
+            await databaseFunctions.addSecondUserToBattle(battle.id, user.id);
         }
     });
-    client.on('select-first-pokemon', async data => {
-        if (client.username == battle.user1.username) {
-            battle.user1.hasPlayed = true;
-            battle.user1.currentPokemonIndex = data.index;
-        } else {
-            battle.user2.hasPlayed = true;
-            battle.user2.currentPokemonIndex = data.index;
+    client.on('opponent-confirm', () => {
+        if (!opponent) opponent = battle.user2;
+    });
+    const startCounter = (battleRoom, player, opponent) => {
+        const startTime = new Date();
+        if (!player.hasPlayed) {
+            player.time.startTime = startTime;
+            player.time.timer = setTimeout(async () => {
+                io.to(battleRoom).emit('finished-timeout', player.username);
+                await finishBattle(battle, opponent, player);
+            }, player.time.timeLeft);
         }
-        if (battle.user1.hasPlayed && battle.user2.hasPlayed) {
-            battle.user1.hasPlayed = false;
-            battle.user2.hasPlayed = false;
+        if (!opponent.hasPlayed) {
+            opponent.time.startTime = startTime;
+            opponent.time.timer = setTimeout(async () => {
+                io.to(battleRoom).emit('finished-timeout', opponent.username);
+                await finishBattle(battle, player, opponent);
+            }, opponent.time.timeLeft);
+        }
+    }
+    const pauseCounter = player => {
+        player.time.endTime = new Date();
+        player.time.timeLeft -= player.time.endTime - player.time.startTime;
+        clearTimeout(player.time.timer);
+    }
+    client.on('start-counter', () => {
+        battle.activeTimer = true;
+        startCounter(battle.room, player, opponent);
+        io.to(battle.room).emit('started-timeout');
+    });
+    client.on('pause-timeout', () => {
+        if (player.time.startTime) pauseCounter(player);
+    });
+    client.on('select-first-pokemon', async index => {
+        player.hasPlayed = true;
+        player.activePokemon = player.battleTeam[index];
+        if (player.hasPlayed && opponent.hasPlayed) {
+            player.hasPlayed = false;
+            opponent.hasPlayed = false;
             io.to(battle.room).emit('select-first-pokemon', battle);
+            if (battle.activeTimer) {
+                startCounter(battle.room, player, opponent);
+                io.to(battle.room).emit('resumed-timeout', player.username, opponent.username, player.time.timeLeft, opponent.time.timeLeft);
+            }
         }
     });
-    client.on('surrender', async () => {
-        let winner, loser, result;
-        loser = client.username;
-        if (loser == battle.user1.username) {
-            winner = battle.user2.username;
-            result = `${battle.user2.battleTeam.length} - ${battle.user1.battleTeam.length}`;
-        } else {
-            winner = battle.user1.username;
-            result = `${battle.user1.battleTeam.length} - ${battle.user2.battleTeam.length}`;
+    client.on('select-turn-action', async action => {
+        player.hasPlayed = true;
+        player.chosenAction = action;
+        if (player.hasPlayed && opponent.hasPlayed) {
+            player.hasPlayed = false;
+            opponent.hasPlayed = false;
+            const actionResult = battleFunctions.whoActsFirst(player, opponent) ?
+                battleFunctions.useAction(player, opponent, player.chosenAction) :
+                battleFunctions.useAction(opponent, player, opponent.chosenAction);
+            // io.to(battle.room).emit('action-result', actionResult);
         }
-        await databaseFunctions.finishBattle(battle.id, winner, loser, result);
-        console.log(battle);
-        io.to(battle.room).emit('surrender', {
-            winner: winner,
-            result: result
-        });
-        battleFunctions.resetBattle(battle);
-        battle = null;
     });
 
+    const finishBattle = async (battle, winner, loser) => {
+        battle.result = `${winner.battleTeam.length} - ${loser.battleTeam.length}`;
+        io.to(battle.room).emit('battle-end', {
+            winner: winner.username,
+            result: battle.result
+        });
+        await databaseFunctions.setBattleResults(battle.id, winner.username, loser.username, battle.result);
+        battleFunctions.resetBattle(battle);
+    }
+    client.on('surrender', async () => await finishBattle(battle, opponent, player));
     client.on('disconnect', async () => {
         chat = null;
         if (battle) {
-            if (battle.user2) {
-                let winner, loser, result;
-                loser = client.username;
-                if (loser == battle.user1.username) {
-                    winner = battle.user2.username;
-                    result = `${battle.user2.battleTeam.length} - ${battle.user1.battleTeam.length}`;
-                } else {
-                    winner = battle.user1.username;
-                    result = `${battle.user1.battleTeam.length} - ${battle.user2.battleTeam.length}`;
-                }
-                await databaseFunctions.finishBattle(battle.id, winner, loser, result);
-                io.to(battle.room).emit('surrender', {
-                    winner: winner,
-                    result: result
-                });
-                battleFunctions.resetBattle(battle);
-            }
-            battle = null;
+            (battle.user2) ? await finishBattle(battle, opponent, player) : battleFunctions.resetBattle(battle);
         }
-    })
+    });
 });
 
 app.get('/', async (req, res) => {
-    const pokemonList = await fetchFunctions.allPokemonList();
-    fs.writeFile("./files/allPokemonList.json", JSON.stringify(pokemonList), err => console.log(err));
     if (req.session.user) return res.redirect('/home');
     res.render('login', null);
 });
@@ -220,7 +243,6 @@ app.post('/login', async (req, res) => {
                 req.session.user = user;
                 const ID_User = req.session.user.ID_User;
                 req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-                req.session.activeBattle = false;
                 res.redirect('/home');
                 break;
             case "wrong-password":
@@ -435,10 +457,8 @@ app.get('/lobby/getChat', async (req, res) => {
 app.put('/lobby/selectTeam', async (req, res) => {
     const ID_Team = req.body.ID_Team;
     const team = await databaseFunctions.getTeamByID(ID_Team);
-    const battleTeam = await Promise.all(team.pokemon.map(async pokemon => {
-        const pokemonTypes = pokemon.types.map(poketype => {
-            dataArrays.allTypes.find(type => poketype.name == type.name);
-        });
+    const battleTeam = team.pokemon.map(pokemon => {
+        const pokemonTypes = pokemon.types.map(poketype => dataArrays.allTypes.find(type => poketype.name == type.name));
         const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
 
         const move1 = dataArrays.allMoves.find(move => move.id == pokemon.moves[0]);
@@ -446,7 +466,7 @@ app.put('/lobby/selectTeam', async (req, res) => {
         const move3 = dataArrays.allMoves.find(move => move.id == pokemon.moves[2]);
         const move4 = dataArrays.allMoves.find(move => move.id == pokemon.moves[3]);
 
-        const baseStats = await fetchFunctions.getPokemonBaseStats(pokemon.name);
+        const baseStats = fetchFunctions.getPokemonBaseStats(pokemon.name);
         const hpStat = (pokemon.name != "shedinja") ? mathFunctions.calculateHP(baseStats.hp, pokemon.ev.hp, pokemon.iv.hp) : 1;
         let natureMultiplier = 1;
 
@@ -508,7 +528,7 @@ app.put('/lobby/selectTeam', async (req, res) => {
                     baseStat: speStat,
                     multiplier: 1
                 },
-                prec: {
+                acc: {
                     baseStat: 100,
                     multiplier: 1
                 },
@@ -518,7 +538,7 @@ app.put('/lobby/selectTeam', async (req, res) => {
                 }
             },
             isAlive: true,
-            status: null,
+            status: "OK",
             otherStatus: {
                 confused: false,
                 flinched: false,
@@ -551,24 +571,18 @@ app.put('/lobby/selectTeam', async (req, res) => {
             },
             canChange: true
         }
-    }));
+    });
     req.session.battleTeam = battleTeam;
     res.send(null);
 });
 app.get('/battle', async (req, res) => {
     if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    if (req.session.activeBattle) return res.render('lobby', {
-        user: req.session.user,
-        teams: req.session.teams,
-        error: "No puede entrar a otra batalla si ya está en una."
-    });
     res.render('battle', {
         username: req.session.user.username,
         profile_photo: req.session.user.profile_photo,
         battleTeam: req.session.battleTeam,
         pokemonLeft: req.session.battleTeam.length
     });
-    req.session.activeBattle = true;
 });
 app.get('/battle/getBattleTeam', async (req, res) => {
     res.send({
@@ -576,12 +590,17 @@ app.get('/battle/getBattleTeam', async (req, res) => {
         username: req.session.user.username,
         profile_photo: req.session.user.profile_photo,
         battleTeam: req.session.battleTeam,
-        currentPokemonIndex: "no-pokemon-selected",
+        activePokemon: null,
         hasPlayed: false,
-        timeLeft: 120
+        chosenAction: null,
+        time: {
+            timer: null,
+            timeLeft: 120000,
+            startTime: null,
+            endTime: null
+        }
     });
 });
 app.get('/battle/returnLobby', (req, res) => {
-    req.session.activeBattle = false;
     res.redirect('/lobby');
 });

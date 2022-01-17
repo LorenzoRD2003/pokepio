@@ -99,12 +99,16 @@ exports.allTypesList = async () => {
     const typesList = await Promise.all(
         namesList.map(async typeIndex => {
             const type = await funcionFetch(typeIndex.url);
+
+            const double_damage_from = type.damage_relations.double_damage_from.map(t => t.name);
+            const half_damage_from = type.damage_relations.half_damage_from.map(t => t.name);
+            const no_damage_from = type.damage_relations.no_damage_from.map(t => t.name);
             return {
                 id: type.id,
                 name: type.name,
-                double_damage_to: type.damage_relations.double_damage_to,
-                half_damage_to: type.damage_relations.half_damage_to,
-                no_damage_to: type.damage_relations.no_damage_to,
+                double_damage_from: double_damage_from,
+                half_damage_from: half_damage_from,
+                no_damage_from: no_damage_from
             }
         })
     );
@@ -148,14 +152,8 @@ exports.searchPokemonData = async (pokemon) => {
     };
 }
 
-exports.getPokemonBaseStats = async (pokemon) => {
-    const originalObject = await obtenerPokemon(pokemon);
-    return {
-        hp: originalObject.stats[0].base_stat,
-        atk: originalObject.stats[1].base_stat,
-        def: originalObject.stats[2].base_stat,
-        spa: originalObject.stats[3].base_stat,
-        spd: originalObject.stats[4].base_stat,
-        spe: originalObject.stats[5].base_stat
-    }
+exports.getPokemonBaseStats = (pokemon) => {
+    pokemon = capitalizeFirstLetter(pokemon);
+    const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
+    return pkmnFound.base_stats;
 }

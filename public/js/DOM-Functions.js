@@ -273,12 +273,12 @@ const searchPokemonData = () => {
         // Estadisticas
         const setZeroClass = document.getElementsByClassName('set-zero');
         for (let elem of setZeroClass) elem.value = 0;
-        
-        
+
+
         const hpStat = document.getElementById("hpStat");
         const hpEV = parseInt(getValueByID("inputEVhp"));
         const hpIV = parseInt(getValueByID("inputIVhp"));
-        hpStat.textContent = (res.name != "shedinja") ? `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}`: `PV: 1`;    
+        hpStat.textContent = (res.name != "shedinja") ? `PV: ${calculateHP(res.base_stats.hp, hpEV, hpIV)}` : `PV: 1`;
         const hpElemUpdaters = document.getElementsByClassName("hp-updater");
         for (let elem of hpElemUpdaters) {
             elem.addEventListener("input", () => {
@@ -472,6 +472,7 @@ const deleteTeam = (elem) => {
             switch (res.success) {
                 case "successful":
                     createSuccessModal("deleteTeamModal", "El equipo fue borrado satisfactoriamente.");
+                    divTeam.previousSibling.previousSibling.remove();
                     divTeam.remove();
                     break;
                 case "error":
@@ -498,15 +499,14 @@ const modifyTeamName = (elem) => {
         ID_Team: parseInt(divTeam.dataset.id),
         newName: elem.parentElement.children[0].value
     }
-    elem.parentElement.innerHTML = `
-        <h4 class="text-start">${object.newName}</h4>
-    `;
-    divTeam.children[0].children[2].children[0].disabled = false;
     ajax("PUT", "/teambuilder/modifyTeamName", object, (res) => {
         res = JSON.parse(res);
         switch (res.success) {
             case "successful":
                 createSuccessModal("modifyTeamNameModal", `El nombre del equipo fue cambiado satisfactoriamente a ${object.newName}.`);
+                elem.parentElement.innerHTML = `<h4 class="text-start">${object.newName}</h4>`;
+                divTeam.previousSibling.previousSibling.innerText = object.newName;
+                divTeam.children[0].children[2].children[0].disabled = false;
                 break;
             case "error":
                 createErrorModal("errorModifyTeamNameModal", "Hubo un error al intentar modificar el nombre del equipo. Inténtelo nuevamente más tarde.");
@@ -518,7 +518,6 @@ const modifyTeamName = (elem) => {
 const deletePokemon = (elem) => {
     const pokemonDiv = elem.parentElement;
     const divTeam = pokemonDiv.parentElement.parentElement;
-    console.log(divTeam.children.length);
     if (divTeam.children.length == 2) {
         return createErrorModal("errorDeletePokemonModal", "No puede borrar el último Pokémon del equipo. En su lugar, borre el equipo.");
     }
