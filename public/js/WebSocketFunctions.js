@@ -92,6 +92,12 @@ socket.on('select-first-pokemon', battle => {
         move4.hidden = true;
     }
     
+    const changeButtons = document.getElementsByClassName("btn-change");
+    for (let button of changeButtons) {
+        button.hidden = false;
+        if (button.dataset.index != player.currentPokemonIndex) button.disabled = false;
+    }
+    
     document.getElementById("pokemon2Name").innerText = capitalizeFirstLetter(opponent.activePokemon.name);
     document.getElementById("pokemon2Image").srcset = opponent.activePokemon.sprite;
     document.getElementById("pokemon2HP").innerText = `PV: ${opponent.activePokemon.stats.hp.currentHP}`;
@@ -105,6 +111,10 @@ socket.on('select-first-pokemon', battle => {
     document.getElementById("beforeBattleShowUser2").hidden = true;
     document.getElementById("inBattleShowUser1").hidden = false;
     document.getElementById("inBattleShowUser2").hidden = false;
+});
+socket.on('action-result', (battle, turnMessages) => {
+    console.log(battle);
+    turnMessages.forEach(addMessageToServerMessages);
 });
 socket.on('battle-end', battleResult => {
     disableButton("surrenderButton");
@@ -186,6 +196,18 @@ const selectFirstPokemon = pkmnIndex => {
     pauseTimeout();
     socket.emit("select-first-pokemon", pkmnIndex);
 }
+const selectTurnAction = moveIndex => {
+    const moveButtons = document.getElementsByClassName("btn-move");
+    for (let button of moveButtons) button.disabled = true;
+    const changeButtons = document.getElementsByClassName("btn-change");
+    for (let button of changeButtons) button.disabled = true;
+    pauseTimeout();
+    socket.emit("select-turn-action", player.activePokemon.moves[moveIndex]);
+}
+
+const changePokemon = pkmnIndex => {
+
+}
 const surrenderFromBattle = () => {
     createModal(
         "surrenderButtonModal",
@@ -201,10 +223,4 @@ const surrenderFromBattle = () => {
 const beginTimeout = () => socket.emit("start-counter");
 const pauseTimeout = () => {
     if (isActiveTimeout) socket.emit("pause-timeout");
-}
-const selectTurnAction = moveIndex => {
-    const moveButtons = document.getElementsByClassName("btn-move");
-    for (let button of moveButtons) button.disabled = true;
-    pauseTimeout();
-    socket.emit("select-turn-action", player.activePokemon.moves[moveIndex]);
 }

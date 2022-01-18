@@ -15,11 +15,20 @@
                 <h6>Pokémon restantes: <b id="user1pokemonLeft">{{pokemonLeft}}</b></h6>
             </div>
             <div class="form-group mb-5">
-                <button id="timeButton" class="btn btn-primary" onclick="beginTimeout()" disabled>Activar temporizador</button>
+                <button id="timeButton" class="btn btn-primary" onclick="beginTimeout()" disabled>Activar
+                    temporizador</button>
             </div>
             <div class="form-group mb-3">
                 <button id="surrenderButton" class="btn btn-danger" onclick="surrenderFromBattle()"
                     disabled>Rendirse</button>
+            </div>
+            <div class="form-group mb-3">
+                {{#each battleTeam}}
+                <div class="mb-2">
+                    <button class="capitalize btn btn-success btn-change" data-index="{{@index}}"
+                        onclick="changePokemon({{@index}})" disabled hidden>{{this.name}}</button>
+                </div>
+                {{/each}}
             </div>
         </div>
         <div id="beforeOpponentHasConnected" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-6 text-center">
@@ -62,18 +71,22 @@
             </div>
             <div class="row">
                 <div class="form-group col-sm-6 mb-3">
-                    <button id="move1" class="btn btn-secondary btn-move" onclick="selectTurnAction(0)">Movimiento 1</button>
+                    <button id="move1" class="btn btn-secondary btn-move" onclick="selectTurnAction(0)">Movimiento
+                        1</button>
                 </div>
                 <div class="form-group col-sm-6 mb-3">
-                    <button id="move2" class="btn btn-secondary btn-move" onclick="selectTurnAction(1)">Movimiento 2</button>
+                    <button id="move2" class="btn btn-secondary btn-move" onclick="selectTurnAction(1)">Movimiento
+                        2</button>
                 </div>
             </div>
             <div class="row">
                 <div class="form-group col-sm-6 mb-3">
-                    <button id="move3" class="btn btn-secondary btn-move" onclick="selectTurnAction(2)">Movimiento 3</button>
+                    <button id="move3" class="btn btn-secondary btn-move" onclick="selectTurnAction(2)">Movimiento
+                        3</button>
                 </div>
                 <div class="form-group col-sm-6 mb-3">
-                    <button id="move4" class="btn btn-secondary btn-move" onclick="selectTurnAction(3)">Movimiento 4</button>
+                    <button id="move4" class="btn btn-secondary btn-move" onclick="selectTurnAction(3)">Movimiento
+                        4</button>
                 </div>
             </div>
         </div>

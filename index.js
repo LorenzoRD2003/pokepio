@@ -51,7 +51,8 @@ for (let i = 0; i < allBattles.length; i++) {
         user1: null,
         user2: null,
         result: "",
-        activeTimer: false
+        activeTimer: false,
+        weather: null
     };
 }
 io.on('connection', client => {
@@ -131,6 +132,7 @@ io.on('connection', client => {
     client.on('select-first-pokemon', async index => {
         player.hasPlayed = true;
         player.activePokemon = player.battleTeam[index];
+        player.currentPokemonIndex = index;
         if (player.hasPlayed && opponent.hasPlayed) {
             player.hasPlayed = false;
             opponent.hasPlayed = false;
@@ -147,10 +149,26 @@ io.on('connection', client => {
         if (player.hasPlayed && opponent.hasPlayed) {
             player.hasPlayed = false;
             opponent.hasPlayed = false;
-            const actionResult = battleFunctions.whoActsFirst(player, opponent) ?
-                battleFunctions.useAction(player, opponent, player.chosenAction) :
-                battleFunctions.useAction(opponent, player, opponent.chosenAction);
-            // io.to(battle.room).emit('action-result', actionResult);
+            let turnMessages = [];
+            if (battleFunctions.whoActsFirst(player, opponent)) {
+                battleFunctions.useAction(player, opponent, player.chosenAction, turnMessages);
+                io.to(battle.room).emit('action-result', battle, turnMessages);
+                turnMessages = [];
+                if (opponent.activePokemon.isAlive) {
+                    await mathFunctions.sleep(1000);
+                    battleFunctions.useAction(opponent, player, opponent.chosenAction, turnMessages);
+                    io.to(battle.room).emit('action-result', battle, turnMessages);
+                }
+            } else {
+                battleFunctions.useAction(opponent, player, opponent.chosenAction, turnMessages);
+                io.to(battle.room).emit('action-result', battle, turnMessages);
+                turnMessages = [];
+                if (player.activePokemon.isAlive) {
+                    await mathFunctions.sleep(1000);
+                    battleFunctions.useAction(player, opponent, player.chosenAction, turnMessages);
+                    io.to(battle.room).emit('action-result', battle, turnMessages);
+                }
+            }
         }
     });
 
@@ -509,34 +527,41 @@ app.put('/lobby/selectTeam', async (req, res) => {
                     currentHP: hpStat
                 },
                 atk: {
+                    name: "Ataque",
                     baseStat: atkStat,
-                    multiplier: 1
+                    stage: 0
                 },
                 def: {
+                    name: "Defensa",
                     baseStat: defStat,
-                    multiplier: 1
+                    stage: 0
                 },
                 spa: {
+                    name: "Ataque Especial",
                     baseStat: spaStat,
-                    multiplier: 1
+                    stage: 0
                 },
                 spd: {
+                    name: "Defensa Especial",
                     baseStat: spdStat,
-                    multiplier: 1
+                    stage: 0
                 },
                 spe: {
+                    name: "Velocidad",
                     baseStat: speStat,
-                    multiplier: 1
+                    stage: 0
                 },
                 acc: {
-                    baseStat: 100,
-                    multiplier: 1
+                    name: "Precisión",
+                    stage: 0
                 },
                 eva: {
-                    baseStat: 100,
-                    multiplier: 1
+                    name: "Evasión",
+                    stage: 0
                 }
             },
+            crit_rate: 0,
+            happiness: 255,
             isAlive: true,
             status: "OK",
             otherStatus: {
@@ -567,7 +592,8 @@ app.put('/lobby/selectTeam', async (req, res) => {
                 substitute: false,
                 aiming: false,
                 thrashing: false,
-                transformed: false
+                transformed: false,
+                safeguard: false
             },
             canChange: true
         }
@@ -591,6 +617,7 @@ app.get('/battle/getBattleTeam', async (req, res) => {
         profile_photo: req.session.user.profile_photo,
         battleTeam: req.session.battleTeam,
         activePokemon: null,
+        currentPokemonIndex: null,
         hasPlayed: false,
         chosenAction: null,
         time: {
