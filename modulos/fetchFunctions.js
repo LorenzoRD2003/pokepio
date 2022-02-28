@@ -1,24 +1,41 @@
 const dataArrays = require("./dataArrays");
-
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
-
-const funcionFetch = async (link) => {
+const fetchFunction = async link => {
     const response = await fetch(link);
-    const object = await response.text();
-    const parsedObject = JSON.parse(object);
-    return parsedObject;
+    return await response.json();
 }
-exports.funcionFetch = funcionFetch;
-const obtenerPokemon = async (pokemon) => await funcionFetch(`https://pokeapi.co/api/v2/pokemon/${pokemon}`);
-exports.obtenerPokemon = obtenerPokemon;
 
-const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-const untilThirdGen = (elem) => elem.generation == "generation-i" || elem.generation == "generation-ii" || elem.generation == "generation-iii";
+/**
+ * Capitaliza una string.
+ * @param {String} str String a capitarlizar.
+ * @returns String capitalizada.
+ */
+const capitalizeFirstLetter = str => str.charAt(0).toUpperCase() + str.slice(1);
+
+/**
+ * Para saber si un elemento es de las tres primeras generaciones.
+ * @param {Object} elem Elemento sobre el cual verificar. 
+ * @returns true si es de las tres primeras generaciones, false de otro modo.
+ */
+const untilThirdGen = elem => elem.generation == "generation-i" || elem.generation == "generation-ii" || elem.generation == "generation-iii";
+
+
+/**
+ * Lista de nombres de los 386 Pokémon
+ */
+exports.allPokemonNamesList = async () => {
+    const pokemonList = (await fetchFunction("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
+    return pokemonList.map(pokemon => pokemon.name);
+}
+
+/**
+ * Devuelve una lista con todos los Pokémon hasta la tercera generación.
+ */
 exports.allPokemonList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
     const pokemonList = await Promise.all(
         namesList.map(async pokemonIndex => {
-            const pokemon = await funcionFetch(pokemonIndex.url);
+            const pokemon = await fetchFunction(pokemonIndex.url);
             console.log(pokemon.name);
             return {
                 name: capitalizeFirstLetter(pokemon.name),
@@ -40,11 +57,15 @@ exports.allPokemonList = async () => {
     );
     return pokemonList;
 };
+
+/**
+ * Devuelve una lista con todas las naturalezas.
+ */
 exports.allNaturesList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/nature?limit=25")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/nature?limit=25")).results;
     const naturesList = await Promise.all(
         namesList.map(async natureIndex => {
-            const nature = await funcionFetch(natureIndex.url);
+            const nature = await fetchFunction(natureIndex.url);
             return {
                 name: capitalizeFirstLetter(nature.name),
                 stat_up: (nature.increased_stat) ? nature.increased_stat.name : null,
@@ -54,11 +75,15 @@ exports.allNaturesList = async () => {
     ));
     return naturesList.sort();
 }
+
+/**
+ * Devuelve una lista con todos los ítems hasta la tercera generación.
+ */
 exports.allItemsList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/item?limit=2000")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/item?limit=2000")).results;
     const itemsList = await Promise.all(
         namesList.map(async itemIndex => {
-            const item = await funcionFetch(itemIndex.url);
+            const item = await fetchFunction(itemIndex.url);
             return {
                 id: item.id,
                 name: capitalizeFirstLetter(item.name),
@@ -69,11 +94,15 @@ exports.allItemsList = async () => {
     );
     return itemsList.filter(untilThirdGen);
 }
+
+/**
+ * Devuelve una lista con todos los movimientos hasta la tercera generación.
+ */
 exports.allMovesList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/move?limit=2000")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/move?limit=2000")).results;
     const movesList = await Promise.all(
         namesList.map(async moveIndex => {
-            const move = await funcionFetch(moveIndex.url);
+            const move = await fetchFunction(moveIndex.url);
             const damage_class = move.damage_class;
             const effect_entry = move.effect_entries[0];
             return {
@@ -94,11 +123,15 @@ exports.allMovesList = async () => {
     );
     return movesList.filter(untilThirdGen);
 }
+
+/**
+ * Devuelve una lista con todos los tipos Pokémon.
+ */
 exports.allTypesList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/type?limit=2000")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/type?limit=2000")).results;
     const typesList = await Promise.all(
         namesList.map(async typeIndex => {
-            const type = await funcionFetch(typeIndex.url);
+            const type = await fetchFunction(typeIndex.url);
 
             const double_damage_from = type.damage_relations.double_damage_from.map(t => t.name);
             const half_damage_from = type.damage_relations.half_damage_from.map(t => t.name);
@@ -114,11 +147,15 @@ exports.allTypesList = async () => {
     );
     return typesList;
 }
+
+/**
+ * Devuelve una lista con todas las habilidades hasta la tercera generación.
+ */
 exports.allAbilitiesList = async () => {
-    const namesList = (await funcionFetch("https://pokeapi.co/api/v2/ability?limit=2000")).results;
+    const namesList = (await fetchFunction("https://pokeapi.co/api/v2/ability?limit=2000")).results;
     const abilitiesList = await Promise.all(
         namesList.map(async abilityIndex => {
-            const ability = await funcionFetch(abilityIndex.url);
+            const ability = await fetchFunction(abilityIndex.url);
             const effect_entry = ability.effect_entries[1];
             return {
                 id: ability.id,
@@ -131,7 +168,12 @@ exports.allAbilitiesList = async () => {
     return abilitiesList.filter(untilThirdGen);
 }
 
-exports.searchPokemonData = async (pokemon) => {
+/**
+ * Dado el nombre de un Pokémon, devuelve todos sus datos.
+ * @param {String} pokemon Nombre del Pokémon.
+ * @returns Objeto con los datos del Pokémon.
+ */
+exports.searchPokemonData = async pokemon => {
     pokemon = capitalizeFirstLetter(pokemon);
     const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
     const name = pkmnFound.name;
@@ -152,7 +194,12 @@ exports.searchPokemonData = async (pokemon) => {
     };
 }
 
-exports.getPokemonBaseStats = (pokemon) => {
+/**
+ * Dado el nombre de un Pokémon, devuelve sus stats base.
+ * @param {String} pokemon Nombre del Pokémon. 
+ * @returns Objeto con los stats base del Pokémon.
+ */
+exports.getPokemonBaseStats = pokemon => {
     pokemon = capitalizeFirstLetter(pokemon);
     const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
     return pkmnFound.base_stats;

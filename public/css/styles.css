@@ -1,3 +1,6 @@
+html {
+    scroll-behavior: smooth
+}
 
 .header {
     width: 100%;
@@ -19,16 +22,6 @@
 
 main {
     min-height: 57vh;
-}
-
-#page-footer {
-    position: relative;
-    padding-bottom: 2vh;
-    min-height: 23.2vh;
-    left: 0;
-    bottom: 0;
-    width: 100%;
-    background-color: rgb(120, 184, 112);
 }
 
 .capitalize {

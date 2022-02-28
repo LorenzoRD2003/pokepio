@@ -3,7 +3,7 @@
         <h2 id="teamNameID">Nombre del Equipo:</h2>
     </div>
     <div class="mb-3 form-group text-center">
-        <select id="pokemon-selector" class="form-select mb-3" onchange="enableButton('searchPokemonDataButton')">
+        <select id="pokemon-selector" class="form-select mb-3" onchange="activateSearchPokemonDataButton()">
             <option disabled selected>Seleccione un Pokémon</option>
             {{#each pokemonNamesList}}
             <option>{{this}}</option>
@@ -28,6 +28,18 @@
         <h4 id="pokemonTypes"></h4>
     </div>
     <div class="row my-3">
+        <div class="col-sm-6">
+            <h4>Nivel:</h4>
+            <input type="number"
+                class="form-control hp-updater atk-updater def-updater spa-updater spd-updater spe-updater"
+                id="pokemonLevel" min="0" max="100" value="100">
+        </div>
+        <div class="col-sm-6">
+            <h4>Felicidad:</h4>
+            <input type="number" class="form-control" id="happiness" min="0" max="255" value="255">
+        </div>
+    </div>
+    <div class="row my-3">
         <h4>Habilidades:</h4>
         <select class="form-select mb-3" id="pokemonAbilitiesList">
             <option disabled selected>Seleccione una habilidad: </option>
@@ -36,34 +48,34 @@
             <h6 id="abilityDescription"></h6>
         </div>
     </div>
-    <div class="my-3">
+    <div class="row my-3">
         <h4>Movimientos: </h4>
-        <select class="form-select mb-3 movesList" id="movesList1">
-            <option disabled selected>Seleccione un movimiento: </option>
-        </select>
         <div class="mb-3">
-            <h6 id="moveDescription1"></h6>
+            <select class="form-select mb-3 movesList" id="movesList1">
+                <option disabled selected>Seleccione un movimiento: </option>
+            </select>
+            <h6></h6>
         </div>
-        <select class="form-select mb-3 movesList" id="movesList2">
-            <option disabled selected>Seleccione un movimiento: </option>
-        </select>
         <div class="mb-3">
-            <h6 id="moveDescription2"></h6>
+            <select class="form-select mb-3 movesList" id="movesList2">
+                <option disabled selected>Seleccione un movimiento: </option>
+            </select>
+            <h6></h6>
         </div>
-        <select class="form-select mb-3 movesList" id="movesList3">
-            <option disabled selected>Seleccione un movimiento: </option>
-        </select>
         <div class="mb-3">
-            <h6 id="moveDescription3"></h6>
+            <select class="form-select mb-3 movesList" id="movesList3">
+                <option disabled selected>Seleccione un movimiento: </option>
+            </select>
+            <h6></h6>
         </div>
-        <select class="form-select mb-3 movesList" id="movesList4">
-            <option disabled selected>Seleccione un movimiento: </option>
-        </select>
         <div class="mb-3">
-            <h6 id="moveDescription4"></h6>
+            <select class="form-select mb-3 movesList" id="movesList4">
+                <option disabled selected>Seleccione un movimiento: </option>
+            </select>
+            <h6></h6>
         </div>
     </div>
-    <div class="my-3">
+    <div class="row my-3">
         <h4>Stats: </h4>
         <ul>
             <li id="hpStat"></li>
@@ -74,17 +86,18 @@
             <li id="speStat"></li>
         </ul>
     </div>
-    <div class="my-3">
+    <div class="row my-3">
         <h4>IV's:</h4>
         <div class="row">
             <div class="col-sm-3">
                 <h5>PV: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range hp-updater set-zero" min="0" max="31" value="31" id="rangeIVhp">
+                <input type="range" class="form-range iv-range hp-updater" min="0" max="31" value="31" id="rangeIVhp">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control hp-updater set-zero" min="0" max="31" value="31" id="inputIVhp">
+                <input type="number" class="form-control iv-control hp-updater" min="0" max="31" value="31"
+                    id="inputIVhp">
             </div>
         </div>
         <div class="row">
@@ -92,10 +105,10 @@
                 <h5>Ataque: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range atk-updater set-zero" min="0" max="31" value="31" id="rangeIVatk">
+                <input type="range" class="form-range iv-range atk-updater" min="0" max="31" value="31" id="rangeIVatk">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control atk-updater set-zero" min="0" max="31" value="31"
+                <input type="number" class="form-control iv-control atk-updater" min="0" max="31" value="31"
                     id="inputIVatk">
             </div>
         </div>
@@ -104,10 +117,10 @@
                 <h5>Defensa: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range def-updater set-zero" min="0" max="31" value="31" id="rangeIVdef">
+                <input type="range" class="form-range iv-range def-updater" min="0" max="31" value="31" id="rangeIVdef">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control def-updater set-zero" min="0" max="31" value="31"
+                <input type="number" class="form-control iv-control def-updater" min="0" max="31" value="31"
                     id="inputIVdef">
             </div>
         </div>
@@ -116,10 +129,10 @@
                 <h5>Ataque Especial: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range spa-updater set-zero" min="0" max="31" value="31" id="rangeIVspa">
+                <input type="range" class="form-range iv-range spa-updater" min="0" max="31" value="31" id="rangeIVspa">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control spa-updater set-zero" min="0" max="31" value="31"
+                <input type="number" class="form-control iv-control spa-updater" min="0" max="31" value="31"
                     id="inputIVspa">
             </div>
         </div>
@@ -128,10 +141,10 @@
                 <h5>Defensa Especial: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range spd-updater set-zero" min="0" max="31" value="31" id="rangeIVspd">
+                <input type="range" class="form-range iv-range spd-updater" min="0" max="31" value="31" id="rangeIVspd">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control spd-updater set-zero" min="0" max="31" value="31"
+                <input type="number" class="form-control iv-control spd-updater" min="0" max="31" value="31"
                     id="inputIVspd">
             </div>
         </div>
@@ -140,25 +153,25 @@
                 <h5>Velocidad: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range iv-range spe-updater set-zero" min="0" max="31" value="31" id="rangeIVspe">
+                <input type="range" class="form-range iv-range spe-updater" min="0" max="31" value="31" id="rangeIVspe">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control iv-control spe-updater set-zero" min="0" max="31" value="31"
+                <input type="number" class="form-control iv-control spe-updater" min="0" max="31" value="31"
                     id="inputIVspe">
             </div>
         </div>
     </div>
-    <div class="my-3">
-        <h4>EV's:</h4>
+    <div class="row my-3">
+        <h4>EV's (máximo total 510):</h4>
         <div class="row">
             <div class="col-sm-3">
                 <h5>PV: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range hp-updater set-zero" min="0" max="255" value="0" id="rangeEVhp">
+                <input type="range" class="form-range ev-range hp-updater" min="0" max="255" value="0" id="rangeEVhp">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control hp-updater set-zero" min="0" max="255" value="0"
+                <input type="number" class="form-control ev-control hp-updater" min="0" max="255" value="0"
                     id="inputEVhp">
             </div>
         </div>
@@ -167,10 +180,11 @@
                 <h5>Ataque: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range atk-updater set-zero" min="0" max="255" value="0" id="rangeEVatk">
+                <input type="range" class="form-range ev-range atk-updater" min="0" max="255" value="0" id="rangeEVatk">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control atk-updater set-zero" min="0" max="255" value="0" id="inputEVatk">
+                <input type="number" class="form-control ev-control atk-updater" min="0" max="255" value="0"
+                    id="inputEVatk">
             </div>
         </div>
         <div class="row">
@@ -178,10 +192,10 @@
                 <h5>Defensa: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range def-updater set-zero" min="0" max="255" value="0" id="rangeEVdef">
+                <input type="range" class="form-range ev-range def-updater" min="0" max="255" value="0" id="rangeEVdef">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control def-updater set-zero" min="0" max="255" value="0"
+                <input type="number" class="form-control ev-control def-updater" min="0" max="255" value="0"
                     id="inputEVdef">
             </div>
         </div>
@@ -190,10 +204,10 @@
                 <h5>Ataque Especial: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range spa-updater set-zero" min="0" max="255" value="0" id="rangeEVspa">
+                <input type="range" class="form-range ev-range spa-updater" min="0" max="255" value="0" id="rangeEVspa">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control spa-updater set-zero" min="0" max="255" value="0"
+                <input type="number" class="form-control ev-control spa-updater" min="0" max="255" value="0"
                     id="inputEVspa">
             </div>
         </div>
@@ -202,10 +216,10 @@
                 <h5>Defensa Especial: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range spd-updater set-zero" min="0" max="255" value="0" id="rangeEVspd">
+                <input type="range" class="form-range ev-range spd-updater" min="0" max="255" value="0" id="rangeEVspd">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control spd-updater set-zero" min="0" max="255" value="0"
+                <input type="number" class="form-control ev-control spd-updater" min="0" max="255" value="0"
                     id="inputEVspd">
             </div>
         </div>
@@ -214,33 +228,33 @@
                 <h5>Velocidad: </h5>
             </div>
             <div class="col-sm-4">
-                <input type="range" class="form-range ev-range spe-updater set-zero" min="0" max="255" value="0" id="rangeEVspe">
+                <input type="range" class="form-range ev-range spe-updater" min="0" max="255" value="0" id="rangeEVspe">
             </div>
             <div class="col-sm-2">
-                <input type="number" class="form-control ev-control spe-updater set-zero" min="0" max="255" value="0"
+                <input type="number" class="form-control ev-control spe-updater" min="0" max="255" value="0"
                     id="inputEVspe">
             </div>
         </div>
     </div>
-    <div class="my-3">
+    <div class="row my-3">
         <h4>Naturaleza</h4>
         <select id="nature-selector" class="form-select atk-updater def-updater spa-updater spd-updater spe-updater">
             <option disabled selected data-name="empty">Seleccione una naturaleza</option>
             {{#each naturesList}}
             {{#if this.stat_up}}
-            <option class="pokemon-nature" data-name="{{this.name}}" data-stat-up="{{this.stat_up}}"
+            <option value="{{this.name}}" class="pokemon-nature" data-stat-up="{{this.stat_up}}"
                 data-stat-down="{{this.stat_down}}">
                 {{this.name}}, more {{this.stat_up}}, less {{this.stat_down}}
             </option>
             {{else}}
-            <option class="pokemon-nature" data-name="{{this.name}}">
+            <option class="pokemon-nature" value="{{this.name}}">
                 {{this.name}}
             </option>
             {{/if}}
             {{/each}}
         </select>
     </div>
-    <div class="my-3">
+    <div class="row my-3">
         <h4>Objeto</h4>
         <select id="item-selector" class="form-select">
             <option disabled selected>Seleccione un objeto</option>
@@ -252,7 +266,8 @@
             <h6 id="itemDescription"></h6>
         </div>
     </div>
-    <div class="my-3 text-center">
+    <div class="row my-3 text-center">
         <button id="addPokemonToTeamButton" class="btn btn-lg btn-primary">Agregar Pokémon al Equipo</button>
     </div>
+    <a id="returnTeambuilderLink" href="/teambuilder" class="btn btn-primary btn-lg" hidden>Volver</a>
 </div>

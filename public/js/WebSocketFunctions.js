@@ -53,7 +53,8 @@ socket.on('select-first-pokemon', battle => {
     }
     document.getElementById("pokemon1Name").innerText = capitalizeFirstLetter(player.activePokemon.name);
     document.getElementById("pokemon1Image").srcset = player.activePokemon.sprite;
-    document.getElementById("pokemon1HP").innerText = `PV: ${player.activePokemon.stats.hp.currentHP}`;
+    document.getElementById("pokemon1Level").innerText = player.activePokemon.level;
+    document.getElementById("pokemon1HP").innerText = `PV: ${player.activePokemon.stats.hp.currentHP} / ${player.activePokemon.stats.hp.maxHP}`;
     document.getElementById("pokemon1Atk").innerText = `Ataque: ${player.activePokemon.stats.atk.baseStat}`;
     document.getElementById("pokemon1Def").innerText = `Defensa: ${player.activePokemon.stats.def.baseStat}`;
     document.getElementById("pokemon1Spa").innerText = `Ataque Especial: ${player.activePokemon.stats.spa.baseStat}`;
@@ -100,6 +101,7 @@ socket.on('select-first-pokemon', battle => {
     
     document.getElementById("pokemon2Name").innerText = capitalizeFirstLetter(opponent.activePokemon.name);
     document.getElementById("pokemon2Image").srcset = opponent.activePokemon.sprite;
+    document.getElementById("pokemon2Level").innerText = opponent.activePokemon.level;
     document.getElementById("pokemon2HP").innerText = `PV: ${opponent.activePokemon.stats.hp.currentHP}`;
     document.getElementById("pokemon2Status").innerText = `Estado: ${opponent.activePokemon.status}`;
     opponent.activePokemon.types.forEach(type => document.getElementById("pokemon2Types").innerText += `${capitalizeFirstLetter(type.name)} `);
@@ -132,19 +134,19 @@ socket.on('started-timeout', () => {
     isActiveTimeout = true;
     addMessageToServerMessages("Te quedan 120 segundos.");
 });
-socket.on('resumed-timeout', (username1, username2, time1, time2) => {
-    addMessageToServerMessages(`A ${username1} le quedan ${Math.round(time1 / 1000)} segundos.`);
-    addMessageToServerMessages(`A ${username2} le quedan ${Math.round(time2 / 1000)} segundos.`);
-});
+socket.on('resumed-timeout', (user, time) => addMessageToServerMessages(`A ${user} le quedan ${Math.round(time)} segundos.`));
 socket.on('finished-timeout', username => {
     addMessageToServerMessages(`Se acabó el tiempo de ${username}.`);
 });
 
 const createChatWithUser = () => {
-    document.getElementById("chatDiv").hidden = true;
-    const object = {
-        other_user: getValueByID("other-user")
-    }
+    const chatDiv = document.getElementById("chatDiv");
+    chatDiv.hidden = true;
+
+    const createChatButton = document.getElementById("createChatButton");
+    createChatButton.disabled = true;
+
+    const object = { other_user: getValueByID("other-user") }
     ajax("GET", "/lobby/getChat", object, res => {
         res = JSON.parse(res);
         switch (res.success) {
@@ -152,7 +154,6 @@ const createChatWithUser = () => {
                 const chatDiv = document.getElementById("chatDiv");
                 const messagesDiv = document.getElementById("messagesDiv");
                 messagesDiv.innerHTML = "";
-                chatDiv.hidden = false;
                 chatDiv.dataset.chatID = res.ID_Chat;
                 chatDiv.dataset.userSender = res.userSender.name;
                 document.getElementById("chatName").innerText = `Chat entre ${res.userSender.name} y ${res.userReceiver.name}`;
@@ -164,6 +165,8 @@ const createChatWithUser = () => {
                     });
                 }
                 socket.emit('join-chat', { ID_Chat: res.ID_Chat });
+                chatDiv.hidden = false;
+                createChatButton.disabled = false;
                 break;
             case "non-existing-users":
                 createErrorModal("errorGetChatModal", "Ingrese nombres de usuario válidos.");
@@ -193,7 +196,6 @@ const joinBattle = () => {
 const selectFirstPokemon = pkmnIndex => {
     const selectPokemonButtons = document.getElementsByClassName("btn-selectPokemonAtStart");
     for (let button of selectPokemonButtons) button.disabled = true;
-    pauseTimeout();
     socket.emit("select-first-pokemon", pkmnIndex);
 }
 const selectTurnAction = moveIndex => {
@@ -201,8 +203,8 @@ const selectTurnAction = moveIndex => {
     for (let button of moveButtons) button.disabled = true;
     const changeButtons = document.getElementsByClassName("btn-change");
     for (let button of changeButtons) button.disabled = true;
-    pauseTimeout();
-    socket.emit("select-turn-action", player.activePokemon.moves[moveIndex]);
+    const selectedMove = player.activePokemon.moves[moveIndex];
+    socket.emit("select-turn-action", selectedMove);
 }
 
 const changePokemon = pkmnIndex => {
@@ -221,6 +223,3 @@ const surrenderFromBattle = () => {
 }
 
 const beginTimeout = () => socket.emit("start-counter");
-const pauseTimeout = () => {
-    if (isActiveTimeout) socket.emit("pause-timeout");
-}

@@ -7,10 +7,8 @@
             <input id="newTeamName" type="text" class="form-control" value="">
         </div>
         <div class="mb-3 form-group text-center">
-            <button class="btn btn-lg btn-primary" onclick="addNewTeam()">Agregar Equipo</button>
+            <button id="addNewTeamButton" class="btn btn-lg btn-primary" onclick="addNewTeam()">Agregar Equipo</button>
         </div>
     </div>
     {{> newPokemon}}
 </div>
-
-<form id="returnToTeambuilderForm" action="/teambuilder" method="GET"></form>

@@ -10,12 +10,12 @@
             <select id="selectTeamID" class="form-select" onchange="selectBattleTeam()">
                 <option disabled selected>Seleccione un equipo...</option>
                 {{#each teams}}
-                <option data-id="{{this.ID_Team}}">{{this.team_name}}</option>
+                <option value="{{this.ID_Team}}">{{this.team_name}}</option>
                 {{/each}}
             </select>
         </div>
         <div class="mb-3 form-check">
-            <a id="searchCombatButton" class="btn btn-primary btn-lg" href="/battle" hidden>Buscar combate</a>
+            <a id="searchCombatButton" class="btn btn-primary btn-lg disabled" href="/battle">Buscar combate</a>
         </div>
     </div>
 </div>
@@ -30,7 +30,7 @@
             <input type="text" class="form-control" id="other-user" value="">
         </div>
         <div class="mb-3 form-check">
-            <button class="btn btn-primary btn-lg" onclick="createChatWithUser()">Crear chat entre usuarios</button>
+            <button id="createChatButton" class="btn btn-primary btn-lg" onclick="createChatWithUser()">Crear chat entre usuarios</button>
         </div>
     </div>
     <div id="chatDiv" class="px-5 pt-3 bg-light mb-3 p-3 border" hidden>

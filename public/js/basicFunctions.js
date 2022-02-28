@@ -1,11 +1,5 @@
 // Para ahorrar en escritura
-const getValueByID = (elemID) => document.getElementById(elemID).value;
-const getSelectedOption = (selectElemID) => {
-    const selectElem = document.getElementById(selectElemID);
-    const selectedIndex = selectElem.selectedIndex;
-    return selectElem[selectedIndex];
-}
-const getDatasetOfOption = (selectElemID) => getSelectedOption(selectElemID).dataset;
+const getValueByID = elemID => document.getElementById(elemID).value;
 
 /**
  * Devuelve si una string esta en otra con un bool
@@ -57,22 +51,16 @@ const createModal = (id, title, text, buttonText, buttonCallback, secondButtonTe
 };
 
 const createErrorModal = (id, errorMessage) => createModal(id, "¡Alerta!", errorMessage, "Cerrar", () => $(`#${id}`).modal("hide"));
-const createSuccessModal = (id, successMessage) => createModal(id, "¡Felicidades!", successMessage, "Cerrar", $(`#${id}`).modal("hide"));
-
-// Activar y desactivar un botón
-const enableButton = (buttonID) => document.getElementById(`${buttonID}`).disabled = false;
-const disableButton = (buttonID) => document.getElementById(`${buttonID}`).disabled = true;
+const createSuccessModal = (id, successMessage) => createModal(id, "¡Felicidades!", successMessage, "Cerrar", () => $(`#${id}`).modal("hide"));
 
 // Validación de los datos en el registro
-const validateEmail = (email) => {
+const validateEmail = email => {
     const emailRegex = /(?:[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*|"(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21\x23-\x5b\x5d-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])*")@(?:(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?|\[(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?|[a-z0-9-]*[a-z0-9]:(?:[\x01-\x08\x0b\x0c\x0e-\x1f\x21-\x5a\x53-\x7f]|\\[\x01-\x09\x0b\x0c\x0e-\x7f])+)\])/;
     return emailRegex.test(email);
 }
-const validateUsername = (username) => username.length >= 8;
-const validatePassword = (password) => {
-    return password.length >= 8;
-    // agregar minimo de un numero, una mayuscula, una minuscula
-}
+const validateUsername = username => username.length >= 8;
+
+const validatePassword = password => password.match(/[A-Z]/g) && password.match(/[a-z]/g) && password.match(/[0-9]/g) && password.length >= 8;
 const fullUserValidation = (email, username, password) => {
     if (!validateEmail(email)) {
         createErrorModal("errorCreatingAccountModal", "El email ingresado es incorrecto.");
@@ -83,15 +71,24 @@ const fullUserValidation = (email, username, password) => {
         return false;
     }
     if (!validatePassword(password)) {
-        createErrorModal("errorCreatingAccountModal", "La contraseña debe tener al menos 8 caracteres.");
+        createErrorModal("errorCreatingAccountModal", "La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número.");
         return false;
     }
     return true;
 };
 
-const capitalizeFirstLetter = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+/**
+ * Capitaliza una string.
+ * @param {String} str String a capitarlizar.
+ * @returns String capitalizada.
+ */
+const capitalizeFirstLetter = str => str.charAt(0).toUpperCase() + str.slice(1);
 
-const enforceMinMax = (elem) => {
+/**
+ * Asegurarme de que no puedo pasarme del min/max.
+ * @param {HTMLElement} elem Elemento sobre el que trabajar.
+ */
+const enforceMinMax = elem => {
     if (elem.value != "") {
         if (parseInt(elem.value) < parseInt(elem.min)) {
             elem.value = elem.min;
@@ -101,5 +98,21 @@ const enforceMinMax = (elem) => {
         }
     } else {
         elem.value = "0";
+    }
+}
+
+/**
+ * Devuelve el multiplicador de un stat respecgto a la naturaleza de un Pokémon.
+ * @param {Object} nature Naturaleza del Pokémon.
+ * @param {String} stat Nombre del stat.
+ * @returns 
+ */
+const getNatureMultiplier = (nature, stat) => {
+    if (nature.statUp == stat) {
+        return 1.1;
+    } else if (nature.statDown == stat) {
+        return 0.9;
+    } else {
+        return 1;
     }
 }

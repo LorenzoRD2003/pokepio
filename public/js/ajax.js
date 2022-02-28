@@ -7,7 +7,7 @@
  */
 function ajax(method, url, jsonObject, callback) {
 	let req = new XMLHttpRequest();
-	if(method === "GET" && jsonObject !== null) {
+	if (method === "GET" && jsonObject !== null) {
 		url += `?${$.param(jsonObject)}`;
 	}
 	req.open(method, url, true);
@@ -20,10 +20,8 @@ function ajax(method, url, jsonObject, callback) {
 			console.error(req.status + " " + req.statusText);
 		}
 	});
-	req.addEventListener("error", function() {
-		console.error("Error de red");
-	});
-	req.responseType = 'text';
+	req.addEventListener("error", err => console.error(err));
+	req.responseType = 'json';
 	if(jsonObject !== null && method !== "GET") {
 		req.setRequestHeader('Content-type', "application/json");
 		req.send(JSON.stringify(jsonObject));
