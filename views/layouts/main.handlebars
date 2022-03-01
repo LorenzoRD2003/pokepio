@@ -5,7 +5,6 @@
 	<meta charset="utf-8">
 	<title>Pokepío</title>
 	<link rel="stylesheet" href="/css/styles.css">
-	<script src="/js/ajax.js"></script>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
 		integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
@@ -17,24 +16,20 @@
 		integrity="sha384-1fOn6VtTq3PWwfsOrk45LnYcGosJwzMHv+Xh/Jx5303FVOXzEnw0EpLv30mtjmlj"
 		crossorigin="anonymous"></script>
 	<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-	<script src="/js/axios.js"></script>
 	<script src="/socket.io/socket.io.js"></script>
+	<script src="/js/basicFunctions.js"></script>
+	<script src="/js/axios.js"></script>
 	<link rel="icon" href="../img/icon.png">
 </head>
 
 <body>
-	{{> header this}}
-
+	{{> header}}
+	
 	<main>
-		{{{body}}}
-
 		{{> modalContainer}}
+		
+		{{{body}}}
 	</main>
-
-	<script src="/js/basicFunctions.js"></script>
-	<script src="/js/DOM-Functions.js"></script>
-	<script src="/js/mathFunctions.js"></script>
-	<script src="/js/WebSocketFunctions.js"></script>
 </body>
 
 </html>

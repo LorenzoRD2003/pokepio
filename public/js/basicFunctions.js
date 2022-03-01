@@ -100,19 +100,3 @@ const enforceMinMax = elem => {
         elem.value = "0";
     }
 }
-
-/**
- * Devuelve el multiplicador de un stat respecgto a la naturaleza de un Pokémon.
- * @param {Object} nature Naturaleza del Pokémon.
- * @param {String} stat Nombre del stat.
- * @returns 
- */
-const getNatureMultiplier = (nature, stat) => {
-    if (nature.statUp == stat) {
-        return 1.1;
-    } else if (nature.statDown == stat) {
-        return 0.9;
-    } else {
-        return 1;
-    }
-}

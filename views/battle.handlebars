@@ -1,134 +1,130 @@
-<body onload="joinBattle()">
-    <div class="row battleScreen" id="divBattle">
-        <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
-            <div class="form-group mb-3">
-                <h4 id="username">{{username}}</h4>
-            </div>
-            <div class="form-group mb-5">
-                {{#if profile_photo}}
-                <img src="/img/profile_photos/{{profile_photo}}" class="profile-photo rounded-circle">
-                {{else}}
-                <b>Sin foto de perfil</b>
-                {{/if}}
-            </div>
-            <div class="form-group mb-5">
-                <h6>Pokémon restantes: <b id="user1pokemonLeft">{{pokemonLeft}}</b></h6>
-            </div>
-            <div class="form-group mb-5">
-                <button id="timeButton" class="btn btn-primary" onclick="beginTimeout()" disabled>Activar
-                    temporizador</button>
-            </div>
-            <div class="form-group mb-3">
-                <button id="surrenderButton" class="btn btn-danger" onclick="surrenderFromBattle()"
-                    disabled>Rendirse</button>
-            </div>
-            <div class="form-group mb-3">
-                {{#each battleTeam}}
-                <div class="mb-2">
-                    <button class="capitalize btn btn-success btn-change" data-index="{{@index}}"
-                        onclick="changePokemon({{@index}})" disabled hidden>{{this.name}}</button>
-                </div>
-                {{/each}}
-            </div>
+<div class="row battleScreen" id="divBattle">
+    <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
+        <div class="form-group mb-3">
+            <h4 id="username">{{username}}</h4>
         </div>
-        <div id="beforeOpponentHasConnected" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-6 text-center">
-            <div class="form-group mb-3">
-                <h3>Esperando al oponente...</h3>
-            </div>
+        <div class="form-group mb-5">
+            {{#if profile_photo}}
+            <img src="/img/profile_photos/{{profile_photo}}" class="profile-photo rounded-circle">
+            {{else}}
+            <b>Sin foto de perfil</b>
+            {{/if}}
         </div>
-        <div id="beforeBattleShowUser1" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
-            <div class="form-group mb-3">
-                <h3>Elija un Pokémon</h3>
-            </div>
+        <div class="form-group mb-5">
+            <h6>Pokémon restantes: <b id="user1pokemonLeft">{{pokemonLeft}}</b></h6>
+        </div>
+        <div class="form-group mb-5">
+            <button id="timeButton" class="btn btn-primary" disabled>Activar temporizador</button>
+        </div>
+        <div class="form-group mb-3">
+            <button id="surrenderButton" class="btn btn-danger" disabled>Rendirse</button>
+        </div>
+        <div class="form-group mb-3">
             {{#each battleTeam}}
-            <div class="form-group mb-3">
-                <button class="capitalize btn btn-primary btn-selectPokemonAtStart"
-                    onclick="selectFirstPokemon({{@index}})">{{this.name}}</button>
-                <img class="beforeBattleSprite" src="{{this.sprite}}">
+            <div class="mb-2">
+                <button class="capitalize btn btn-success btn-change" data-index="{{@index}}" disabled hidden>
+                    {{this.name}}
+                </button>
             </div>
             {{/each}}
         </div>
-        <div id="inBattleShowUser1" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
-            <div class="form-group mb-3">
-                <h3 id="pokemon1Name"></h3>
+    </div>
+    <div id="beforeOpponentHasConnected" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-6 text-center">
+        <div class="form-group mb-3">
+            <h3>Esperando al oponente...</h3>
+        </div>
+    </div>
+    <div id="beforeBattleShowUser1" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
+        <div class="form-group mb-3">
+            <h3>Elija un Pokémon</h3>
+        </div>
+        {{#each battleTeam}}
+        <div class="form-group mb-3">
+            <button class="capitalize btn btn-primary btnSelectPokemonAtStart" data-index="{{@index}}">
+                {{this.name}}
+            </button>
+            <img class="beforeBattleSprite" src="{{this.sprite}}">
+        </div>
+        {{/each}}
+    </div>
+    <div id="inBattleShowUser1" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
+        <div class="form-group mb-3">
+            <h3 id="pokemon1Name"></h3>
+        </div>
+        <div class="form-group mb-5">
+            <img id="pokemon1Image">
+        </div>
+        <div class="form-group mb-3">
+            <h5 id="pokemon1Level">Nivel:</h5>
+            <h5 id="pokemon1Types">Tipos: </h5>
+            <h5 id="pokemon1Ability">Habilidad: </h5>
+            <h5 id="pokemon1Item">Objeto: </h5>
+            <h5 id="pokemon1Status">Estado: </h5>
+        </div>
+        <div class="form-group mb-3">
+            <h5 id="pokemon1HP">PV: </h5>
+            <h5 id="pokemon1Atk">Ataque: </h5>
+            <h5 id="pokemon1Def">Defensa: </h5>
+            <h5 id="pokemon1Spa">Ataque Especial: </h5>
+            <h5 id="pokemon1Spd">Defensa Especial: </h5>
+            <h5 id="pokemon1Spe">Velocidad: </h5>
+        </div>
+        <div class="row">
+            <div class="form-group col-sm-6 mb-3">
+                <button id="move1" class="btn btn-secondary btn-move">Movimiento 1</button>
             </div>
-            <div class="form-group mb-5">
-                <img id="pokemon1Image">
-            </div>
-            <div class="form-group mb-3">
-                <h5 id="pokemon1Level">Nivel:</h5>
-                <h5 id="pokemon1Types">Tipos: </h5>
-                <h5 id="pokemon1Ability">Habilidad: </h5>
-                <h5 id="pokemon1Item">Objeto: </h5>
-                <h5 id="pokemon1Status">Estado: </h5>
-            </div>
-            <div class="form-group mb-3">
-                <h5 id="pokemon1HP">PV: </h5>
-                <h5 id="pokemon1Atk">Ataque: </h5>
-                <h5 id="pokemon1Def">Defensa: </h5>
-                <h5 id="pokemon1Spa">Ataque Especial: </h5>
-                <h5 id="pokemon1Spd">Defensa Especial: </h5>
-                <h5 id="pokemon1Spe">Velocidad: </h5>
-            </div>
-            <div class="row">
-                <div class="form-group col-sm-6 mb-3">
-                    <button id="move1" class="btn btn-secondary btn-move" onclick="selectTurnAction(0)">Movimiento
-                        1</button>
-                </div>
-                <div class="form-group col-sm-6 mb-3">
-                    <button id="move2" class="btn btn-secondary btn-move" onclick="selectTurnAction(1)">Movimiento
-                        2</button>
-                </div>
-            </div>
-            <div class="row">
-                <div class="form-group col-sm-6 mb-3">
-                    <button id="move3" class="btn btn-secondary btn-move" onclick="selectTurnAction(2)">Movimiento
-                        3</button>
-                </div>
-                <div class="form-group col-sm-6 mb-3">
-                    <button id="move4" class="btn btn-secondary btn-move" onclick="selectTurnAction(3)">Movimiento
-                        4</button>
-                </div>
+            <div class="form-group col-sm-6 mb-3">
+                <button id="move2" class="btn btn-secondary btn-move">Movimiento 2</button>
             </div>
         </div>
-        <div id="beforeBattleShowUser2" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
-            <div class="form-group mb-3">
-                <h3>Pokémon del adversario</h3>
+        <div class="row">
+            <div class="form-group col-sm-6 mb-3">
+                <button id="move3" class="btn btn-secondary btn-move">Movimiento 3</button>
             </div>
-            <ul id="beforeBattleOpponentPokemon">
-            </ul>
-        </div>
-        <div id="inBattleShowUser2" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
-            <div class="form-group mb-3">
-                <h3 id="pokemon2Name">Nombre Pokémon</h3>
-            </div>
-            <div class="form-group mb-5">
-                <img id="pokemon2Image">
-            </div>
-            <div class="form-group mb-3">
-                <h5 id="pokemon2Level">Nivel:</h5>
-                <h5 id="pokemon2Types">Tipos: </h5>
-                <h5 id="pokemon2Status">Estado: OK</h5>
-                <h5 id="pokemon2HP">PV: </h5>
-            </div>
-        </div>
-        <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
-            <div class="form-group mb-3">
-                <h4 id="user2Name">Usuario 2</h4>
-            </div>
-            <div class="form-group mb-5">
-                <img id="user2Image" class="profile-photo rounded-circle">
-            </div>
-            <div class="form-group mb-3">
-                <h6>Pokémon restantes: <b id="user2pokemonLeft"></b></h6>
-            </div>
-        </div>
-        <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
-            <h2>Mensajes del servidor</h2>
-            <div id="serverMessages">
-
+            <div class="form-group col-sm-6 mb-3">
+                <button id="move4" class="btn btn-secondary btn-move">Movimiento 4</button>
             </div>
         </div>
     </div>
-    <form id="returnToLobbyForm" action="/battle/returnLobby" method="GET"></form>
-</body>
+    <div id="beforeBattleShowUser2" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
+        <div class="form-group mb-3">
+            <h3>Pokémon del adversario</h3>
+        </div>
+        <ul id="beforeBattleOpponentPokemon">
+        </ul>
+    </div>
+    <div id="inBattleShowUser2" class="mt-5 bg-light mb-3 px-3 py-5 border col-sm-3 text-center" hidden>
+        <div class="form-group mb-3">
+            <h3 id="pokemon2Name">Nombre Pokémon</h3>
+        </div>
+        <div class="form-group mb-5">
+            <img id="pokemon2Image">
+        </div>
+        <div class="form-group mb-3">
+            <h5 id="pokemon2Level">Nivel:</h5>
+            <h5 id="pokemon2Types">Tipos: </h5>
+            <h5 id="pokemon2Status">Estado: OK</h5>
+            <h5 id="pokemon2HP">PV: </h5>
+        </div>
+    </div>
+    <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
+        <div class="form-group mb-3">
+            <h4 id="user2Name">Usuario 2</h4>
+        </div>
+        <div class="form-group mb-5">
+            <img id="user2Image" class="profile-photo rounded-circle">
+        </div>
+        <div class="form-group mb-3">
+            <h6>Pokémon restantes: <b id="user2pokemonLeft"></b></h6>
+        </div>
+    </div>
+    <div class="mt-5 bg-light mb-3 p-3 border col-sm-2 text-center">
+        <h2>Mensajes del servidor</h2>
+        <div id="serverMessages">
+
+        </div>
+    </div>
+</div>
+<form id="returnToLobbyForm" action="/battle/returnLobby" method="GET"></form>
+
+<script src="/js/battle.js"></script>

@@ -2,33 +2,38 @@
     <div class="row my-3 form-group">
         <h2>Lista de equipos</h2>
     </div>
-    <div id="teamsContainer" class="my-3 form-group container">
+    <div id="teamsContainer" class="my-3 container d-flex flex-row">
         {{#each teams}}
-        <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{@index}}" aria-expanded="false" aria-controls="collapse{{@index}}">{{this.team_name}}</button>
-        <div class="my-5 collapse" id="collapse{{@index}}" data-id="{{this.ID_Team}}">
-            <div class="row text-center">
-                <div class="col-sm-12 col-lg-3">
-                    <h4 class="text-start">{{this.team_name}}</h4>
+        <div class="mx-2 team" data-id="{{this.ID_Team}}" data-name="{{this.team_name}}">
+            <button class="btn btn-primary btnShowTeam" type="button" data-bs-toggle="collapse"
+                data-bs-target="#collapse{{@index}}" aria-expanded="false" aria-controls="collapse{{@index}}">
+                {{this.team_name}}
+            </button>
+            <div class="my-5 collapse" id="collapse{{@index}}">
+                <div class="row text-center">
+                    <div class="col-sm-12 col-lg-3 titleElem">
+                        <h4 class="text-start">{{this.team_name}}</h4>
+                    </div>
+                    <div class="col-sm-12 col-lg-3">
+                        <button class="btn btn-primary btn-sm btnAddPokemon">Añadir Pokémon</button>
+                    </div>
+                    <div class="col-sm-12 col-lg-3">
+                        <button class="btn btn-secondary btn-sm btnModifyTeam">Cambiar nombre</button>
+                    </div>
+                    <div class="col-sm-12 col-lg-3">
+                        <button class="btn btn-danger btn-sm btnDeleteTeam">Eliminar equipo</button>
+                    </div>
                 </div>
-                <div class="col-sm-12 col-lg-3">
-                    <button class="btn btn-primary btn-sm" onclick="showPokemonCreator(this)">Añadir Pokémon</button>
-                </div>
-                <div class="col-sm-12 col-lg-3">
-                    <button class="btn btn-secondary btn-sm" onclick="activateInputOfModifyTeamName(this)">Cambiar nombre</button>
-                </div>
-                <div class="col-sm-12 col-lg-3">
-                    <button class="btn btn-danger btn-sm" onclick="deleteTeam(this)">Eliminar equipo</button>
-                </div>
+                <ul class="offset-md-1 offset-lg-1 pokemonList">
+                {{#each this.pokemon}}
+                    <li class="capitalize" data-number="{{@index}}">
+                        {{this.name}}
+                        <img src="{{this.sprite}}">
+                        <button class="btn btn-danger btn-sm btnDeletePokemon">Eliminar Pokémon</button>
+                    </li>
+                {{/each}}
+                </ul>
             </div>
-            {{#each this.pokemon}}
-            <ul class="offset-md-1 offset-lg-1">
-                <li class="capitalize" data-number="{{@index}}">
-                    {{this.name}}
-                    <img src="{{this.sprite}}">
-                    <button class="btn btn-danger btn-sm" onclick="deletePokemon(this)">Eliminar Pokémon</button>
-                </li>
-            </ul>
-            {{/each}}
         </div>
         {{/each}}
     </div>

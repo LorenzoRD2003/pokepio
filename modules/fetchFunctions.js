@@ -25,7 +25,7 @@ const untilThirdGen = elem => elem.generation == "generation-i" || elem.generati
  */
 exports.allPokemonNamesList = async () => {
     const pokemonList = (await fetchFunction("https://pokeapi.co/api/v2/pokemon?limit=386")).results;
-    return pokemonList.map(pokemon => pokemon.name);
+    return pokemonList.map(pokemon => capitalizeFirstLetter(pokemon.name)).sort();
 }
 
 /**
@@ -174,7 +174,6 @@ exports.allAbilitiesList = async () => {
  * @returns Objeto con los datos del Pokémon.
  */
 exports.searchPokemonData = async pokemon => {
-    pokemon = capitalizeFirstLetter(pokemon);
     const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
     const name = pkmnFound.name;
     const types = pkmnFound.types.map(pkmnType => dataArrays.allTypes.find(type => type.name == pkmnType));

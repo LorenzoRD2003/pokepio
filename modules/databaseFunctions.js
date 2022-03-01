@@ -190,6 +190,8 @@ exports.addPokemonToTeam = async (ID_Team, pokemon) => {
             set pokemon = '${JSON.stringify(pokemonArray)}', modification_date = '${today}'
             where ID_Team = ${ID_Team};
         `);
+
+        return pokemonArray.length;
     }
 }
 
@@ -290,7 +292,10 @@ const getMessagesArrayFromChat = async ID_Chat => {
 exports.addMessageToChat = async (ID_Chat, message) => {
     let messagesArray = (await getMessagesArrayFromChat(ID_Chat)) || [];
     if (messagesArray.length >= 15) messagesArray.shift();
-    messagesArray.push(message);
+    messagesArray.push({
+        sender: message.sender,
+        content: message.content
+    });
     await MySQL.realizarQuery(`
         update ${tablaChats}
         set messages_list = '${JSON.stringify(messagesArray)}'

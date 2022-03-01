@@ -3,14 +3,13 @@
         <h2 id="teamNameID">Nombre del Equipo:</h2>
     </div>
     <div class="mb-3 form-group text-center">
-        <select id="pokemon-selector" class="form-select mb-3" onchange="activateSearchPokemonDataButton()">
+        <select id="pokemon-selector" class="form-select mb-3">
             <option disabled selected>Seleccione un Pokémon</option>
             {{#each pokemonNamesList}}
             <option>{{this}}</option>
             {{/each}}
         </select>
-        <button type="button" id="searchPokemonDataButton" class="btn btn-primary btn-lg"
-            onclick="searchPokemonData()">Buscar Pokémon</button>
+        <button type="button" id="searchPokemonDataButton" class="btn btn-primary btn-lg">Buscar Pokémon</button>
     </div>
 </div>
 <div id="addPokemonDiv" class="px-5 pt-3 bg-light mb-3 p-3 border" hidden>
@@ -42,7 +41,7 @@
     <div class="row my-3">
         <h4>Habilidades:</h4>
         <select class="form-select mb-3" id="pokemonAbilitiesList">
-            <option disabled selected>Seleccione una habilidad: </option>
+            <option disabled selected value="">Seleccione una habilidad: </option>
         </select>
         <div class="mb-3">
             <h6 id="abilityDescription"></h6>
@@ -239,7 +238,7 @@
     <div class="row my-3">
         <h4>Naturaleza</h4>
         <select id="nature-selector" class="form-select atk-updater def-updater spa-updater spd-updater spe-updater">
-            <option disabled selected data-name="empty">Seleccione una naturaleza</option>
+            <option disabled selected value="">Seleccione una naturaleza:</option>
             {{#each naturesList}}
             {{#if this.stat_up}}
             <option value="{{this.name}}" class="pokemon-nature" data-stat-up="{{this.stat_up}}"
@@ -257,7 +256,7 @@
     <div class="row my-3">
         <h4>Objeto</h4>
         <select id="item-selector" class="form-select">
-            <option disabled selected>Seleccione un objeto</option>
+            <option disabled selected value="">Seleccione un objeto</option>
             {{#each itemsList}}
             <option data-id="{{this.id}}" data-description="{{this.description}}">{{this.name}}</option>
             {{/each}}

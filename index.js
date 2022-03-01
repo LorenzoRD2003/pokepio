@@ -1,12 +1,13 @@
 const express = require('express');
 const exphbs = require('express-handlebars');
 const bodyParser = require('body-parser');
-const fetchFunctions = require('./modulos/fetchFunctions');
-const databaseFunctions = require('./modulos/databaseFunctions');
-const mathFunctions = require('./modulos/mathFunctions');
-const dataArrays = require("./modulos/dataArrays");
-const battleFunctions = require("./modulos/battleFunctions");
-const credentials = require("./modulos/credentials");
+const fetchFunctions = require('./modules/fetchFunctions');
+const databaseFunctions = require('./modules/databaseFunctions');
+const mathFunctions = require('./modules/mathFunctions');
+const dataArrays = require("./modules/dataArrays");
+const battleFunctions = require("./modules/battleFunctions");
+const credentials = require("./modules/credentials");
+const { ApiError, apiErrorHandler } = require('./modules/error-handler.js');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -22,9 +23,7 @@ const storage = multer.diskStorage({
     encoding: null
 });
 const upload = multer({ storage: storage });
-const deleteFileHandler = (err) => {
-    (err) ? console.log("No se puedo borrar.", err) : console.log("Se pudo borrar");
-}
+const deleteFileHandler = err => err ? console.log("No se puedo borrar.", err) : console.log("Se pudo borrar");
 
 const app = express();
 app.use(express.static('public'));
@@ -74,21 +73,12 @@ io.on('connection', client => {
     });
 
     // Cuando se envia un mensaje de chat
-    client.on('chat-message', async data => {
-        // Parseo lo que me envio el cliente
-        const { ID_Chat, userSender, messageContent } = JSON.parse(data);
-
-        // Hago un objeto mensaje
-        const message = {
-            userSender: userSender,
-            messageContent: messageContent
-        }
-
+    client.on('chat-message', async msg => {
         // Envio el mensaje al chat (para que les salga a ambos)
-        io.to(chat).emit('chat-message', message);
+        io.to(chat).emit('chat-message', msg);
 
         // Guardo el mensaje en la base de datos
-        await databaseFunctions.addMessageToChat(ID_Chat, message);
+        await databaseFunctions.addMessageToChat(msg.ID_Chat, msg);
     });
 
     // Unirse a una batalla
@@ -315,7 +305,7 @@ io.on('connection', client => {
 
         // Pongo los resultados en la base de datos
         await databaseFunctions.setBattleResults(battle.id, winner.username, loser.username, battle.result);
-        
+
         // Reinicio la batalla
         battleFunctions.resetBattle(battle);
     }
@@ -329,7 +319,7 @@ io.on('connection', client => {
         if (battle) {
             // Si se unió un segundo usuario, termino la batalla como siempre, de otro modo la borro de la base de datos
             (battle.user2) ? await finishBattle(battle, opponent, player) : await databaseFunctions.deleteBattle(battle.id);
-            
+
             // Reinicio el objeto de la batalla para liberarlo para futuros combates
             battleFunctions.resetBattle(battle);
         }
@@ -339,6 +329,34 @@ io.on('connection', client => {
 app.get('/', async (req, res) => {
     if (req.session.user) return res.redirect('/home');
     res.render('login', null);
+});
+app.post('/login', async (req, res) => {
+    try {
+        const { email_or_username, password } = req.body;
+        const { user, success } = (email_or_username.search("@") != -1) ?
+            await databaseFunctions.loginIntoSystemWithEmail(email_or_username, password) :
+            await databaseFunctions.loginIntoSystemWithUsername(email_or_username, password);
+        switch (success) {
+            case "access":
+                req.session.user = user;
+                const ID_User = req.session.user.ID_User;
+                req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
+                res.redirect('/home');
+                break;
+            case "wrong-password":
+                res.render('login', { error: "La contraseña ingresada es incorrecta." });
+                break;
+            case "non-existent-email":
+                res.render('login', { error: "El email no está registrado." });
+                break;
+            case "non-existent-username":
+                res.render('login', { error: "El nombre de usuario no está registrado." });
+                break;
+        }
+    } catch (err) {
+        console.log(err);
+        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    }
 });
 app.get('/home', async (req, res) => {
     if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
@@ -378,59 +396,49 @@ app.get('/home/modifyPassword', (req, res) => {
     if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
     res.render('modifyPassword', { user: req.session.user });
 });
-app.post('/createAccount/create', async (req, res) => {
-    try {
-        const { email, username, password } = req.body;
-        const boolUsernameInDB = await databaseFunctions.usernameAlreadyInDatabase(username);
-        if (boolUsernameInDB) {
-            return res.send({ success: "alreadyExistingUsername" });
-        }
-        const boolEmailInDB = await databaseFunctions.emailAlreadyInDatabase(email);
-        if (boolEmailInDB) {
-            return res.send({ success: "alreadyExistingEmail" });
-        }
-        await databaseFunctions.insertUser(email, username, password)
-        res.send({ success: "successful" });
-    } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
-    }
+app.get('/lobby', async (req, res) => {
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('lobby', { user: req.session.user, teams: req.session.teams });
 });
-app.post('/login', async (req, res) => {
-    try {
-        const { email_or_username, password } = req.body;
-        const { user, success } = (email_or_username.search("@") != -1) ?
-            await databaseFunctions.loginIntoSystemWithEmail(email_or_username, password) :
-            await databaseFunctions.loginIntoSystemWithUsername(email_or_username, password);
-        switch (success) {
-            case "access":
-                req.session.user = user;
-                const ID_User = req.session.user.ID_User;
-                req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-                res.redirect('/home');
-                break;
-            case "wrong-password":
-                res.render('login', { error: "La contraseña ingresada es incorrecta." });
-                break;
-            case "non-existent-email":
-                res.render('login', { error: "El email no está registrado." });
-                break;
-            case "non-existent-username":
-                res.render('login', { error: "El nombre de usuario no está registrado." });
-                break;
-        }
-    } catch (err) {
-        console.log(err);
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    }
+app.get('/battle', async (req, res) => {
+    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    res.render('battle', {
+        username: req.session.user.username,
+        profile_photo: req.session.user.profile_photo,
+        battleTeam: req.session.battleTeam,
+        pokemonLeft: req.session.battleTeam.length
+    });
 });
 app.get('/logout', (req, res) => {
     req.session.destroy();
     res.redirect('/');
-})
+});
+
+app.post('/createAccount/create', async (req, res, next) => {
+    try {
+        const { email, username, password } = req.body;
+
+        if (!email || !username || !password)
+            return next(ApiError.badRequestError("Faltan ingresar datos."));
+
+        const boolUsernameInDB = await databaseFunctions.usernameAlreadyInDatabase(username);
+        if (boolUsernameInDB)
+            return next(ApiError.badRequestError("El nombre de usuario ya está registrado."));
+
+        const boolEmailInDB = await databaseFunctions.emailAlreadyInDatabase(email);
+        if (boolEmailInDB)
+            return next(ApiError.badRequestError("El email ya está registrado."));
+
+        await databaseFunctions.insertUser(email, username, password);
+        res.sendStatus(200);
+    } catch (err) {
+        next(ApiError.internalServerError(err.message));
+    }
+});
 app.put('/home/modifyUserData/modify', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
+        console.log(req.body);
         const { real_name, age, nationality, hobbies, pokemon_favorito } = req.body;
         if (real_name) {
             await databaseFunctions.updateUserData(ID_User, "real_name", real_name);
@@ -451,15 +459,13 @@ app.put('/home/modifyUserData/modify', async (req, res, next) => {
         if (pokemon_favorito) {
             await databaseFunctions.updateUserData(ID_User, "pokemon_favorito", pokemon_favorito);
             req.session.user.pokemon_favorito = pokemon_favorito;
-            throw "Hola";
         }
         res.sendStatus(200);
     } catch (err) {
-        console.error(err);
-        res.sendStatus(500);
+        next(ApiError.internalServerError(err.message));
     }
 });
-const deleteProfilePhoto = async (ID_User) => {
+const deleteProfilePhoto = async ID_User => {
     const profilePhoto = await databaseFunctions.getProfilePhoto(ID_User);
     fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
 }
@@ -487,153 +493,246 @@ app.post('/home/uploadProfilePhoto', upload.single('profile_photo'), async (req,
         }
     }
 });
-app.get('/home/modifyPassword/getOldPassword', (req, res) => {
-    const oldPassword = req.session.user.acc_password;
-    res.send({ oldPassword: oldPassword });
-});
-app.put('/home/modifyPassword/update', async (req, res) => {
+app.get('/home/modifyPassword/getOldPassword', (req, res, next) => {
     try {
-        const ID_User = req.session.user.ID_User;
-        const newPassword = req.body.newPassword;
-        await databaseFunctions.updateUserData(ID_User, "acc_password", newPassword);
-        req.session.user.acc_password = newPassword;
-        res.send({ success: "successful" });
+        const oldPassword = req.session.user.acc_password;
+        if (!oldPassword)
+            return next(ApiError.internalServerError("Error de sesión."));
+
+        res.send({ oldPassword: oldPassword });
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.post('/teambuilder/create/newTeam', async (req, res) => {
+app.put('/home/modifyPassword/update', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
+        const newPassword = req.body.newPassword;
+        console.log(req.body);
+        if (!newPassword)
+            return next(ApiError.badRequestError("Falta ingresar la nueva contaseña."));
+
+        await databaseFunctions.updateUserData(ID_User, "acc_password", newPassword);
+        req.session.user.acc_password = newPassword;
+
+        res.sendStatus(200);
+    } catch (err) {
+        next(ApiError.internalServerError(err.message));
+    }
+});
+app.post('/teambuilder/create/newTeam', async (req, res, next) => {
+    try {
+        const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
         const team_name = req.body.team_name;
+        if (!team_name)
+            return next(ApiError.badRequestError("Falta ingresar el nombre del equipo."));
 
         // Quiero verificar que no tengo otro equipo con el mismo nombre
         const foundTeam = req.session.teams.find(team => team.team_name == team_name);
-        if (foundTeam) return res.send({ success: "already-existing-name" });
+        if (foundTeam)
+            return next(ApiError.badRequestError("Ya tiene un equipo con este nombre. Elija otro nombre."));
 
         await databaseFunctions.createNewTeam(ID_User, team_name);
         req.session.selected_team = await databaseFunctions.selectTeamByUserAndTeamName(ID_User, team_name);
         req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-        res.send({ success: "successful" });
+
+        res.sendStatus(200);
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.get('/teambuilder/create/searchPokemonData', async (req, res) => {
-    const pokemon = req.query.name;
-    const pokemonData = await fetchFunctions.searchPokemonData(pokemon);
-    res.send(pokemonData);
+app.get('/teambuilder/create/searchPokemonData', async (req, res, next) => {
+    try {
+        const pokemon = req.query.name;
+        if (!dataArrays.pokemonNamesList.includes(pokemon))
+            return next(ApiError.badRequestError("El Pokémon ingresado es incorrecto."))
+
+        const pokemonData = await fetchFunctions.searchPokemonData(pokemon);
+
+        res.status(200).send(pokemonData);
+    } catch (err) {
+        next(ApiError.internalServerError(err.message));
+    }
 });
-app.post('/teambuilder/create/addPokemonToTeam', async (req, res) => {
+app.post('/teambuilder/create/addPokemonToTeam', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
         const ID_Team = req.session.selected_team.ID_Team;
+
+        if (!ID_User || !ID_Team)
+            return next(ApiError.internalServerError("Error de sesión."));
+
         const pokemon = req.body;
-        await databaseFunctions.addPokemonToTeam(ID_Team, pokemon);
-        const pokemonAmount = (await databaseFunctions.getPokemonArray(ID_Team)).length;
+        if (!pokemon)
+            return next(ApiError.badRequestError("Los datos del Pokémon ingresados son incorrectos."));
+
+        if (pokemon.level > 100 || pokemon.level <= 0)
+            return next(ApiError.badRequestError("El nivel del Pokémon no tiene un valor correcto."));
+
+        if (pokemon.happiness > 255 || pokemon.happiness < 0)
+            return next(ApiError.badRequestError("La felicidad del Pokémon no tiene un valor correcto."));
+
+        for (let stat in pokemon.iv) {
+            if (stat > 31 || stat < 0)
+                return next(ApiError.badRequestError("Los IV's del Pokémon no tienen un valor correcto."));
+        }
+
+        const sumOfEV = Object.values(pokemon.ev).reduce((acc, el) => acc + el, 0);
+        if (sumOfEV > 510 || sumOfEV < 0)
+            return next(ApiError.badRequestError("Los EV's del Pokémon no tienen un valor correcto."));
+
+        const pokemonAmount = await databaseFunctions.addPokemonToTeam(ID_Team, pokemon);
         req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-        return (pokemonAmount == 6) ? res.send({ success: "sixPokemon" }) : res.send({ success: "successful" });
+
+        if (pokemonAmount == 6)
+            res.status(200).send({ message: "sixPokemon" });
+        else
+            res.status(200).send({ message: "ok" });
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.delete('/teambuilder/deleteTeam', async (req, res) => {
+app.delete('/teambuilder/deleteTeam', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
-        const ID_Team = req.body.ID_Team;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
+        const ID_Team = req.query.ID_Team;
+        if (!ID_Team)
+            return next(ApiError.badRequestError("Hubo un error con el equipo seleccionado."));
+
         await databaseFunctions.deleteTeam(ID_Team);
         req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-        res.send({ success: "successful" });
+
+        res.sendStatus(200);
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.put('/teambuilder/modifyTeamName', async (req, res) => {
+app.put('/teambuilder/modifyTeamName', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
         const { ID_Team, newName } = req.body;
+        if (!ID_Team || !newName)
+            return next(ApiError.badRequestError("Falta ingresar el nombre del equipo."));
 
         // Verifico que no haya otro equipo con este nombre
         const foundTeam = req.session.teams.find(team => team.team_name == newName && team.ID_Team != ID_Team);
-        if (foundTeam) return res.send({ success: "already-existing-name" });
+        if (foundTeam)
+            return next(ApiError.badRequestError("Ya tiene un equipo con este nombre. Elija otro nombre."));
 
         await databaseFunctions.modifyTeamName(ID_Team, newName);
         req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-        res.send({ success: "successful" });
+
+        res.sendStatus(200);
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.delete('/teambuilder/deletePokemon', async (req, res) => {
+app.delete('/teambuilder/deletePokemon', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
-        const { ID_Team, pokemonNumber } = req.body;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
+        const { ID_Team, pokemonNumber } = req.query;
+        if (!ID_Team || !pokemonNumber)
+            return next(ApiError.badRequestError("Hubo un error con los datos ingresados."));
+
+        const pokemonAmount = (await databaseFunctions.getPokemonArray(ID_Team)).length;
+        if (pokemonAmount == 1)
+            return next(ApiError.badRequestError("No se puede borrar el último Pokémon del equipo. En su lugar, borre el equipo."));
+
         await databaseFunctions.deletePokemon(ID_Team, pokemonNumber);
         req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-        res.send({ success: "successful" });
+
+        res.sendStatus(200);
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res) => {
+app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
         const team_name = req.query.team_name;
-        req.session.selected_team = await databaseFunctions.selectTeamByUserAndTeamName(ID_User, team_name);
-        const pokemonAmount = (await databaseFunctions.getPokemonArray(req.session.selected_team.ID_Team)).length;
-        if (pokemonAmount == 6) {
-            res.send({ success: "sixPokemon" })
-        } else {
-            res.send({
-                success: "successful",
-                pokemonNamesList: dataArrays.pokemonNamesList,
-                naturesList: dataArrays.naturesList,
-                itemsList: dataArrays.itemsList
-            });
+        if (!team_name) {
+            return next(ApiError.badRequestError("Error en el nombre del equipo ingresado."));
         }
+        req.session.selected_team = await databaseFunctions.selectTeamByUserAndTeamName(ID_User, team_name);
+
+        const ID_Team = req.session.selected_team.ID_Team;
+        const pokemonAmount = (await databaseFunctions.getPokemonArray(ID_Team)).length;
+
+        if (pokemonAmount == 6)
+            return next(ApiError.badRequestError("Su equipo ya tiene seis Pokémon."));
+
+        res.status(200).send({
+            message: "ok",
+            pokemonNamesList: dataArrays.pokemonNamesList,
+            naturesList: dataArrays.naturesList,
+            itemsList: dataArrays.itemsList
+        });
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.get('/lobby', async (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('lobby', { user: req.session.user, teams: req.session.teams });
-});
-app.get('/lobby/getChat', async (req, res) => {
+app.get('/lobby/getChat', async (req, res, next) => {
     try {
         const other_user = req.query.other_user;
+        if (!other_user)
+            return next(ApiError.badRequestError("No ingresó ningún usuario."));
+
         const ID_User1 = req.session.user.ID_User;
+        const this_user = req.session.user.username;
+        if (!ID_User1 || !this_user)
+            return next(ApiError.internalServerError("Error de sesión."));
+        
+        if (this_user == other_user)
+            return next(ApiError.badRequestError("No puede iniciar un chat con usted mismo."));
+
         const ID_User2 = await databaseFunctions.getIDUserByUsername(other_user);
-        if (!ID_User1 || !ID_User2) return res.send({ success: "non-existing-users" });
+        if (!ID_User2)
+            return next(ApiError.badRequestError("El usuario que ingresó no existe."));
+
+        // Obtengo un chat entre los usuarios. Si no existe, lo creo
         let chat = await databaseFunctions.getChatByUsers(ID_User1, ID_User2);
         if (!chat) {
             await databaseFunctions.createNewChat(ID_User1, ID_User2);
             chat = await databaseFunctions.getChatByUsers(ID_User1, ID_User2);
         }
+
         res.send({
-            success: "successful",
             userSender: { id: ID_User1, name: req.session.user.username },
             userReceiver: { id: ID_User2, name: other_user },
             ID_Chat: chat.ID_Chat,
             messages: chat.messages_list
         });
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        return next(ApiError.internalServerError(err.message));
     }
 });
-app.put('/lobby/selectTeam', async (req, res) => {
+app.get('/lobby/selectTeam', async (req, res, next) => {
     try {
-        const ID_Team = req.body.ID_Team;
+        const ID_Team = req.query.ID_Team;
+        if (!ID_Team)
+            return next(ApiError.badRequestError("Hubo un error con el equipo ingresado."));
+
         const team = await databaseFunctions.getTeamByID(ID_Team);
         const battleTeam = team.pokemon.map(pokemon => {
+            console.log(pokemon.nature);
             const pokemonTypes = pokemon.types.map(poketype => dataArrays.allTypes.find(type => poketype.name == type.name));
             const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
 
@@ -758,39 +857,39 @@ app.put('/lobby/selectTeam', async (req, res) => {
                 canChange: true
             }
         });
+
         req.session.battleTeam = battleTeam;
-        res.send({ success: "successful" });
+        res.sendStatus(200);
     } catch (err) {
-        console.log(err);
-        res.send({ success: "error" });
+        next(ApiError.internalServerError(err.message));
     }
 });
-app.get('/battle', async (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('battle', {
-        username: req.session.user.username,
-        profile_photo: req.session.user.profile_photo,
-        battleTeam: req.session.battleTeam,
-        pokemonLeft: req.session.battleTeam.length
-    });
-});
-app.get('/battle/getBattleTeam', async (req, res) => {
-    res.send({
-        id: req.session.user.ID_User,
-        username: req.session.user.username,
-        profile_photo: req.session.user.profile_photo,
-        battleTeam: req.session.battleTeam,
-        activePokemon: null,
-        hasPlayed: false,
-        chosenAction: null,
-        time: {
-            timer: null,
-            timeLeft: 10000,
-            startTime: null,
-            endTime: null
-        }
-    });
+app.get('/battle/getBattleTeam', async (req, res, next) => {
+    try {
+        if (!req.session.user || !req.session.battleTeam)
+            next(ApiError.internalServerError("Error de sesión."));
+
+        res.send({
+            id: req.session.user.ID_User,
+            username: req.session.user.username,
+            profile_photo: req.session.user.profile_photo,
+            battleTeam: req.session.battleTeam,
+            activePokemon: null,
+            hasPlayed: false,
+            chosenAction: null,
+            time: {
+                timer: null,
+                timeLeft: 10000,
+                startTime: null,
+                endTime: null
+            }
+        });
+    } catch (err) {
+        next(ApiError.internalServerError(err.message));
+    }
 });
 app.get('/battle/returnLobby', (req, res) => {
     res.redirect('/lobby');
 });
+
+app.use(apiErrorHandler);

@@ -7,7 +7,7 @@
         {{> errorAlert}}
         <div class="mb-3 form-group">
             <label for="selectTeamID" class="form-label">Elegir equipo</label>
-            <select id="selectTeamID" class="form-select" onchange="selectBattleTeam()">
+            <select id="selectTeamID" class="form-select">
                 <option disabled selected>Seleccione un equipo...</option>
                 {{#each teams}}
                 <option value="{{this.ID_Team}}">{{this.team_name}}</option>
@@ -30,7 +30,7 @@
             <input type="text" class="form-control" id="other-user" value="">
         </div>
         <div class="mb-3 form-check">
-            <button id="createChatButton" class="btn btn-primary btn-lg" onclick="createChatWithUser()">Crear chat entre usuarios</button>
+            <button id="createChatButton" class="btn btn-primary btn-lg">Crear chat entre usuarios</button>
         </div>
     </div>
     <div id="chatDiv" class="px-5 pt-3 bg-light mb-3 p-3 border" hidden>
@@ -46,8 +46,10 @@
             <input type="text" class="form-control" id="messageToSend" value="" placeholder="Escribir mensaje">
         </div>
         <div class="mb-3 form-group">
-            <button class="btn btn-primary btn-lg" onclick="sendChatMessage()">Enviar mensaje</button>
+            <button id="sendMessageButton" class="btn btn-primary btn-lg">Enviar mensaje</button>
         </div>
     </div>
 </div>
 <form id="joinBattleForm" action="/battle" method="POST"></form>
+
+<script src="/js/lobby.js"></script>
