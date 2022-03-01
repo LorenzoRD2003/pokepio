@@ -1,0 +1,290 @@
+[
+    {
+        "id": 1,
+        "name": "normal",
+        "double_damage_from": [
+            "fighting"
+        ],
+        "half_damage_from": [],
+        "no_damage_from": [
+            "ghost"
+        ]
+    },
+    {
+        "id": 2,
+        "name": "fighting",
+        "double_damage_from": [
+            "flying",
+            "psychic",
+            "fairy"
+        ],
+        "half_damage_from": [
+            "rock",
+            "bug",
+            "dark"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 3,
+        "name": "flying",
+        "double_damage_from": [
+            "rock",
+            "electric",
+            "ice"
+        ],
+        "half_damage_from": [
+            "fighting",
+            "bug",
+            "grass"
+        ],
+        "no_damage_from": [
+            "ground"
+        ]
+    },
+    {
+        "id": 4,
+        "name": "poison",
+        "double_damage_from": [
+            "ground",
+            "psychic"
+        ],
+        "half_damage_from": [
+            "fighting",
+            "poison",
+            "bug",
+            "grass",
+            "fairy"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 5,
+        "name": "ground",
+        "double_damage_from": [
+            "water",
+            "grass",
+            "ice"
+        ],
+        "half_damage_from": [
+            "poison",
+            "rock"
+        ],
+        "no_damage_from": [
+            "electric"
+        ]
+    },
+    {
+        "id": 6,
+        "name": "rock",
+        "double_damage_from": [
+            "fighting",
+            "ground",
+            "steel",
+            "water",
+            "grass"
+        ],
+        "half_damage_from": [
+            "normal",
+            "flying",
+            "poison",
+            "fire"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 7,
+        "name": "bug",
+        "double_damage_from": [
+            "flying",
+            "rock",
+            "fire"
+        ],
+        "half_damage_from": [
+            "fighting",
+            "ground",
+            "grass"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 8,
+        "name": "ghost",
+        "double_damage_from": [
+            "ghost",
+            "dark"
+        ],
+        "half_damage_from": [
+            "poison",
+            "bug"
+        ],
+        "no_damage_from": [
+            "normal",
+            "fighting"
+        ]
+    },
+    {
+        "id": 9,
+        "name": "steel",
+        "double_damage_from": [
+            "fighting",
+            "ground",
+            "fire"
+        ],
+        "half_damage_from": [
+            "normal",
+            "flying",
+            "rock",
+            "bug",
+            "steel",
+            "grass",
+            "psychic",
+            "ice",
+            "dragon",
+            "fairy"
+        ],
+        "no_damage_from": [
+            "poison"
+        ]
+    },
+    {
+        "id": 10,
+        "name": "fire",
+        "double_damage_from": [
+            "ground",
+            "rock",
+            "water"
+        ],
+        "half_damage_from": [
+            "bug",
+            "steel",
+            "fire",
+            "grass",
+            "ice",
+            "fairy"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 11,
+        "name": "water",
+        "double_damage_from": [
+            "grass",
+            "electric"
+        ],
+        "half_damage_from": [
+            "steel",
+            "fire",
+            "water",
+            "ice"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 12,
+        "name": "grass",
+        "double_damage_from": [
+            "flying",
+            "poison",
+            "bug",
+            "fire",
+            "ice"
+        ],
+        "half_damage_from": [
+            "ground",
+            "water",
+            "grass",
+            "electric"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 13,
+        "name": "electric",
+        "double_damage_from": [
+            "ground"
+        ],
+        "half_damage_from": [
+            "flying",
+            "steel",
+            "electric"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 14,
+        "name": "psychic",
+        "double_damage_from": [
+            "bug",
+            "ghost",
+            "dark"
+        ],
+        "half_damage_from": [
+            "fighting",
+            "psychic"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 15,
+        "name": "ice",
+        "double_damage_from": [
+            "fighting",
+            "rock",
+            "steel",
+            "fire"
+        ],
+        "half_damage_from": [
+            "ice"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 16,
+        "name": "dragon",
+        "double_damage_from": [
+            "ice",
+            "dragon",
+            "fairy"
+        ],
+        "half_damage_from": [
+            "fire",
+            "water",
+            "grass",
+            "electric"
+        ],
+        "no_damage_from": []
+    },
+    {
+        "id": 17,
+        "name": "dark",
+        "double_damage_from": [
+            "fighting",
+            "bug",
+            "fairy"
+        ],
+        "half_damage_from": [
+            "ghost",
+            "dark"
+        ],
+        "no_damage_from": [
+            "psychic"
+        ]
+    },
+    {
+        "id": 18,
+        "name": "fairy",
+        "double_damage_from": [
+            "poison",
+            "steel"
+        ],
+        "half_damage_from": [
+            "fighting",
+            "bug",
+            "dark"
+        ],
+        "no_damage_from": [
+            "dragon"
+        ]
+    }
+]

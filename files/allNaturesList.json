@@ -1,0 +1,127 @@
+[
+    {
+        "name": "Hardy",
+        "stat_up": null,
+        "stat_down": null
+    },
+    {
+        "name": "Bold",
+        "stat_up": "defense",
+        "stat_down": "attack"
+    },
+    {
+        "name": "Modest",
+        "stat_up": "special-attack",
+        "stat_down": "attack"
+    },
+    {
+        "name": "Calm",
+        "stat_up": "special-defense",
+        "stat_down": "attack"
+    },
+    {
+        "name": "Timid",
+        "stat_up": "speed",
+        "stat_down": "attack"
+    },
+    {
+        "name": "Lonely",
+        "stat_up": "attack",
+        "stat_down": "defense"
+    },
+    {
+        "name": "Docile",
+        "stat_up": null,
+        "stat_down": null
+    },
+    {
+        "name": "Mild",
+        "stat_up": "special-attack",
+        "stat_down": "defense"
+    },
+    {
+        "name": "Gentle",
+        "stat_up": "special-defense",
+        "stat_down": "defense"
+    },
+    {
+        "name": "Hasty",
+        "stat_up": "speed",
+        "stat_down": "defense"
+    },
+    {
+        "name": "Adamant",
+        "stat_up": "attack",
+        "stat_down": "special-attack"
+    },
+    {
+        "name": "Impish",
+        "stat_up": "defense",
+        "stat_down": "special-attack"
+    },
+    {
+        "name": "Bashful",
+        "stat_up": null,
+        "stat_down": null
+    },
+    {
+        "name": "Careful",
+        "stat_up": "special-defense",
+        "stat_down": "special-attack"
+    },
+    {
+        "name": "Rash",
+        "stat_up": "special-attack",
+        "stat_down": "special-defense"
+    },
+    {
+        "name": "Jolly",
+        "stat_up": "speed",
+        "stat_down": "special-attack"
+    },
+    {
+        "name": "Naughty",
+        "stat_up": "attack",
+        "stat_down": "special-defense"
+    },
+    {
+        "name": "Lax",
+        "stat_up": "defense",
+        "stat_down": "special-defense"
+    },
+    {
+        "name": "Quirky",
+        "stat_up": null,
+        "stat_down": null
+    },
+    {
+        "name": "Naive",
+        "stat_up": "speed",
+        "stat_down": "special-defense"
+    },
+    {
+        "name": "Brave",
+        "stat_up": "attack",
+        "stat_down": "speed"
+    },
+    {
+        "name": "Relaxed",
+        "stat_up": "defense",
+        "stat_down": "speed"
+    },
+    {
+        "name": "Quiet",
+        "stat_up": "special-attack",
+        "stat_down": "speed"
+    },
+    {
+        "name": "Sassy",
+        "stat_up": "special-defense",
+        "stat_down": "speed"
+    },
+    {
+        "name": "Serious",
+        "stat_up": null,
+        "stat_down": null
+    }
+]
