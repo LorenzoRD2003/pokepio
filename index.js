@@ -24,6 +24,10 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 const deleteFileHandler = err => err ? console.log("No se puedo borrar.", err) : console.log("Se pudo borrar");
+const deleteProfilePhoto = async ID_User => {
+    const profilePhoto = await databaseFunctions.getProfilePhoto(ID_User);
+    fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
+}
 
 const app = express();
 app.use(express.static('public'));
@@ -326,92 +330,171 @@ io.on('connection', client => {
     });
 });
 
-app.get('/', async (req, res) => {
-    if (req.session.user) return res.redirect('/home');
-    res.render('login', null);
+// Función para verificar que hice login
+app.use((req, res, next) => {
+    // Verifico que no sea una petición AJAX, que no esté el req.session.user y que no esté haciendo login
+    req.mustLogin = (!req.xhr && !req.session.user && req.url !== "/login");
+    next();
 });
-app.post('/login', async (req, res) => {
+
+app.get('/', async (req, res, next) => {
+    try {
+        // Si la sesión está iniciada, ir a /home
+        if (req.session.user)
+            return res.redirect('/home');
+
+        // De otro modo, borrar la sesión y cargar login.handlebars
+        req.session.destroy();
+        res.render('login', null);
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
+});
+app.get('/createAccount', (req, res, next) => {
+    try {
+        req.session.destroy();
+        res.render('createAccount', null);
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
+});
+app.post('/login', async (req, res, next) => {
     try {
         const { email_or_username, password } = req.body;
+
+        if (!email_or_username || !password)
+            return next(ApiError.badRequestError("Los datos ingresados no pueden estar en blanco."));
+
+        // Hago login, si ingresé con el email o con el usuario son dos funciones diferentes
         const { user, success } = (email_or_username.search("@") != -1) ?
             await databaseFunctions.loginIntoSystemWithEmail(email_or_username, password) :
             await databaseFunctions.loginIntoSystemWithUsername(email_or_username, password);
+
+        // Según la respuesta guardada en success, o bien seguimos o bien tiramos errores
         switch (success) {
             case "access":
+                if (!user)
+                    return next(ApiError.internalServerError("Ha ocurrido un error con el usuario obtenido."));
+
+                // Guardamos datos en las variables de sesión
                 req.session.user = user;
+
                 const ID_User = req.session.user.ID_User;
                 req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-                res.redirect('/home');
-                break;
+
+                // Redirigimos a /home
+                return res.redirect('/home');
             case "wrong-password":
-                res.render('login', { error: "La contraseña ingresada es incorrecta." });
-                break;
+                req.mustLogin = true;
+                return next(ApiError.badRequestError("La contraseña es incorrecta."));
             case "non-existent-email":
-                res.render('login', { error: "El email no está registrado." });
-                break;
+                req.mustLogin = true;
+                return next(ApiError.badRequestError("El email no está registrado."));
             case "non-existent-username":
-                res.render('login', { error: "El nombre de usuario no está registrado." });
-                break;
+                req.mustLogin = true;
+                return next(ApiError.badRequestError("El nombre de usuario no está registrado."));
         }
     } catch (err) {
-        console.log(err);
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+        return next(ApiError.badRequestError(err.message));
     }
 });
-app.get('/home', async (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('home', { user: req.session.user });
+app.get('/home', async (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        res.render('home', { user: req.session.user });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
 });
-app.get('/teambuilder', (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('teambuilder', { user: req.session.user, teams: req.session.teams });
+app.get('/home/modifyUserData', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        res.render('modifyUserData', {
+            user: req.session.user,
+            pokemonNamesList: dataArrays.pokemonNamesList
+        });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
 });
-app.get('/teambuilder/create', (req, res) => {
-    if (req.session.user) {
+app.get('/home/modifyPassword', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        res.render('modifyPassword', { user: req.session.user });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
+});
+app.get('/teambuilder', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        res.render('teambuilder', { user: req.session.user, teams: req.session.teams });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
+});
+app.get('/teambuilder/create', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
         res.render('createTeam', {
             user: req.session.user,
             pokemonNamesList: dataArrays.pokemonNamesList,
             naturesList: dataArrays.naturesList,
             itemsList: dataArrays.itemsList
         });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
     }
 });
-app.get('/createAccount', (req, res) => {
-    req.session.destroy();
-    res.render('createAccount', null);
-});
-app.get('/home/modifyUserData', (req, res) => {
-    if (req.session.user) {
-        res.render('modifyUserData', {
+app.get('/lobby', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        res.render('lobby', {
             user: req.session.user,
-            pokemonNamesList: dataArrays.pokemonNamesList
+            teams: req.session.teams
         });
-    } else {
-        res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
     }
 });
-app.get('/home/modifyPassword', (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('modifyPassword', { user: req.session.user });
+app.get('/battle', (req, res, next) => {
+    try {
+        if (req.mustLogin)
+            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+
+        const battleTeam = req.session.battleTeam;
+        if (!battleTeam)
+            return next(ApiError.badRequestError("Debe tener seleccionado un equipo de batalla para poder entrar a esta página."));
+
+        res.render('battle', {
+            username: req.session.user.username,
+            profile_photo: req.session.user.profile_photo,
+            battleTeam: battleTeam,
+            pokemonLeft: battleTeam.length
+        });
+    } catch (err) {
+        return next(ApiError.badRequestError(err.message));
+    }
 });
-app.get('/lobby', async (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('lobby', { user: req.session.user, teams: req.session.teams });
-});
-app.get('/battle', async (req, res) => {
-    if (!req.session.user) return res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-    res.render('battle', {
-        username: req.session.user.username,
-        profile_photo: req.session.user.profile_photo,
-        battleTeam: req.session.battleTeam,
-        pokemonLeft: req.session.battleTeam.length
-    });
-});
-app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/');
+app.get('/logout', (req, res, next) => {
+    try {
+        req.session.destroy();
+        res.redirect('/');
+    } catch(err) {
+        return next(ApiError.badRequestError(err.message));
+    }
 });
 
 app.post('/createAccount/create', async (req, res, next) => {
@@ -465,10 +548,6 @@ app.put('/home/modifyUserData/modify', async (req, res, next) => {
         next(ApiError.internalServerError(err.message));
     }
 });
-const deleteProfilePhoto = async ID_User => {
-    const profilePhoto = await databaseFunctions.getProfilePhoto(ID_User);
-    fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
-}
 app.post('/home/uploadProfilePhoto', upload.single('profile_photo'), async (req, res) => {
     try {
         if (!req.file) {
@@ -699,7 +778,7 @@ app.get('/lobby/getChat', async (req, res, next) => {
         const this_user = req.session.user.username;
         if (!ID_User1 || !this_user)
             return next(ApiError.internalServerError("Error de sesión."));
-        
+
         if (this_user == other_user)
             return next(ApiError.badRequestError("No puede iniciar un chat con usted mismo."));
 
@@ -732,7 +811,6 @@ app.get('/lobby/selectTeam', async (req, res, next) => {
 
         const team = await databaseFunctions.getTeamByID(ID_Team);
         const battleTeam = team.pokemon.map(pokemon => {
-            console.log(pokemon.nature);
             const pokemonTypes = pokemon.types.map(poketype => dataArrays.allTypes.find(type => poketype.name == type.name));
             const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
 
@@ -869,7 +947,7 @@ app.get('/battle/getBattleTeam', async (req, res, next) => {
         if (!req.session.user || !req.session.battleTeam)
             next(ApiError.internalServerError("Error de sesión."));
 
-        res.send({
+        res.status(200).send({
             id: req.session.user.ID_User,
             username: req.session.user.username,
             profile_photo: req.session.user.profile_photo,

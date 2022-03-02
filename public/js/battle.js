@@ -148,12 +148,10 @@ socket.on('finished-timeout', username => {
 // Unirse a la batalla
 window.addEventListener("load", async () => {
     try {
-        const res = (await nodeReq({
+        const userData = (await nodeReq({
             method: "get",
             url: "/battle/getBattleTeam"
         })).data;
-
-        const userData = JSON.parse(res);
         socket.emit("join-battle", userData);
     } catch (err) {
         handleAxiosError(err);
