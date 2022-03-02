@@ -1,6 +1,5 @@
 ﻿const mySql = require("mysql2/promise");
 const credentials = require("./credentials.js");
-const { ApiError, apiErrorHandler } = require('./error-handler.js');
 
 const SQL_CONFIGURATION_DATA =
 {

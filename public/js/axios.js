@@ -1,6 +1,9 @@
 const nodeReq = axios.create({
     baseURL: location.origin,
-    headers: { "Content-Type": "application/json" },
+    headers: {
+        "X-Requested-With": "XMLHttpRequest",
+        "Content-Type": "application/json"
+    },
     timeout: 20000,
     responseEncoding: "utf-8",
     responseType: "text"

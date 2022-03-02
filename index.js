@@ -7,7 +7,7 @@ const mathFunctions = require('./modules/mathFunctions');
 const dataArrays = require("./modules/dataArrays");
 const battleFunctions = require("./modules/battleFunctions");
 const credentials = require("./modules/credentials");
-const { ApiError, apiErrorHandler } = require('./modules/error-handler.js');
+const { ApiError, api404Handler, apiErrorHandler } = require('./modules/error-handler.js');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
@@ -970,4 +970,8 @@ app.get('/battle/returnLobby', (req, res) => {
     res.redirect('/lobby');
 });
 
+// Al final de todo, usamos el errorHandler
 app.use(apiErrorHandler);
+
+// Si no fue con ninguna de las URL, es error 404
+app.use(api404Handler);

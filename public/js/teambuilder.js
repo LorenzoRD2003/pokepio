@@ -508,6 +508,9 @@ teams.forEach(team => {
         }
     });
 
+    // Quiero que el botón de Añadir Pokémon esté desactivado si ya tengo seis Pokémon en el equipo
+    addPokemonButton.disabled = (pokemonList.children.length == 6);
+
     addPokemonButton.addEventListener("click", async () => {
         addPokemonButton.disabled = true;
 
@@ -632,6 +635,8 @@ teams.forEach(team => {
             },
             "Cancelar", () => deleteTeamButton.disabled = false
         );
+
+        addPokemonButton.disabled = (pokemonList.children.length == 6);
     })
 
     deletePokemonButtons.forEach(btn => {
@@ -668,4 +673,3 @@ teams.forEach(team => {
         });
     });
 });
-

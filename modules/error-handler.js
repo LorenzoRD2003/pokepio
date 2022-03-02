@@ -77,8 +77,19 @@ const apiErrorHandler = (err, req, res, next) => {
                 code: 500,
                 message: "Ha ocurrido un error imprevisto."
             }
-        })
+        });
 }
 exports.apiErrorHandler = apiErrorHandler;
 
-
+const api404Handler = (req, res, next) => {
+    if (res.xhr)
+        res.status(404).send("El recurso solicitado no fue encontrado.");
+    else
+        res.status(404).render("error", {
+            error: {
+                code: 404,
+                message: "El recurso solicitado no fue encontrado."
+            }
+        });
+}
+exports.api404Handler = api404Handler;
