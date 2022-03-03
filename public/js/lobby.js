@@ -11,7 +11,7 @@ selectTeam.addEventListener("change", async () => {
     try {
         await nodeReq({
             method: "get",
-            url: "/lobby/selectTeam",
+            url: "/lobby/team",
             params: {
                 ID_Team: selectTeam.value
             }
@@ -57,7 +57,7 @@ createChatButton.addEventListener("click", async () => {
     try {
         const res = (await axios({
             method: "get",
-            url: "/lobby/getChat",
+            url: "/lobby/chat",
             params: {
                 other_user: getValueByID("other-user")
             }

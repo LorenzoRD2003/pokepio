@@ -21,7 +21,7 @@ createAccountButton.addEventListener("click", async () => {
 
     // Hago el pedido al servidor
     try {
-        await nodeReq.post('/createAccount/create', newUser);
+        await nodeReq.post('/account/create', newUser);
         createModal("createAccountModal",
             "¡Felicidades!",
             "Su usuario fue creado satisfactoriamente.",

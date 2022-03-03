@@ -2,6 +2,8 @@ const modifyPasswordButton = document.getElementById("modifyPasswordButton");
 modifyPasswordButton.addEventListener("click", async () => {
     modifyPasswordButton.disabled = true;
 
+    const oldPassword = getValueByID("oldPassword");
+
     // Verificar que la nueva contraseña cumpla la verificación establecida
     const newPassword = getValueByID("newPassword");
     if (!validatePassword(newPassword))
@@ -13,16 +15,11 @@ modifyPasswordButton.addEventListener("click", async () => {
         return createErrorModal("errorModal", "No se pudo verificar su contraseña pues las contraseñas nuevas ingresadas no son idénticas. Por favor, ingréselas nuevamente.");
 
     try {
-        // Hago un pedido al servidor
-        const res = (await nodeReq.get('/home/modifyPassword/getOldPassword')).data;
-
-        const oldPasswordInput = getValueByID("oldPassword");
-        if (oldPasswordInput != res.oldPassword)
-            return createErrorModal("errorModal", "La contraseña actual ingresada no es correcta. Por favor, ingrésela nuevamente.");
-
-        // Actualizar la contraseña con otro pedido al servidor
-        const object = { newPassword: newPassword };
-        await nodeReq.put('/home/modifyPassword/update', object);
+        const object = {
+            oldPassword: oldPassword,
+            newPassword: newPassword
+        };
+        await nodeReq.put('/home/change-password', object);
         createModal(
             "modifyPasswordModal",
             "¡Felicidades!",

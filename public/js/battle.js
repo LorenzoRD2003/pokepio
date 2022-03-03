@@ -150,7 +150,7 @@ window.addEventListener("load", async () => {
     try {
         const userData = (await nodeReq({
             method: "get",
-            url: "/battle/getBattleTeam"
+            url: "/battle/team"
         })).data;
         socket.emit("join-battle", userData);
     } catch (err) {

@@ -48,8 +48,6 @@ class ApiError {
 exports.ApiError = ApiError;
 
 const apiErrorHandler = (err, req, res, next) => {
-    console.error(err);
-
     // Si es un error de la clase que creamos
     if (err instanceof ApiError) {
         if (req.xhr)
@@ -65,7 +63,6 @@ const apiErrorHandler = (err, req, res, next) => {
             // De otro modo, vamos a la página de error
             return res.status(err.code).render("error", { error: err });
         }
-
     }
 
     // De otro modo, devolvemos mensajes genéricos
@@ -79,9 +76,8 @@ const apiErrorHandler = (err, req, res, next) => {
             }
         });
 }
-exports.apiErrorHandler = apiErrorHandler;
 
-const api404Handler = (req, res, next) => {
+const api404Handler = (req, res) => {
     if (res.xhr)
         res.status(404).send("El recurso solicitado no fue encontrado.");
     else
@@ -92,4 +88,5 @@ const api404Handler = (req, res, next) => {
             }
         });
 }
-exports.api404Handler = api404Handler;
+
+module.exports = { ApiError, apiErrorHandler, api404Handler };

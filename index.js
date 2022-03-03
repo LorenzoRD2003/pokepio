@@ -1,3 +1,6 @@
+/************************************************
+                    Módulos
+************************************************/
 const express = require('express');
 const exphbs = require('express-handlebars');
 const bodyParser = require('body-parser');
@@ -8,26 +11,9 @@ const dataArrays = require("./modules/dataArrays");
 const battleFunctions = require("./modules/battleFunctions");
 const credentials = require("./modules/credentials");
 const { ApiError, api404Handler, apiErrorHandler } = require('./modules/error-handler.js');
-const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const session = require('express-session');
-
-const storage = multer.diskStorage({
-    destination: (req, file, callback) => {
-        callback(null, "public/img/profile_photos");
-    },
-    filename: (req, file, callback) => {
-        callback(null, Date.now() + path.extname(file.originalname));
-    },
-    encoding: null
-});
-const upload = multer({ storage: storage });
-const deleteFileHandler = err => err ? console.log("No se puedo borrar.", err) : console.log("Se pudo borrar");
-const deleteProfilePhoto = async ID_User => {
-    const profilePhoto = await databaseFunctions.getProfilePhoto(ID_User);
-    fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
-}
 
 const app = express();
 app.use(express.static('public'));
@@ -44,6 +30,9 @@ app.use(session({
 const LISTEN_PORT = 3000;
 const server = app.listen(process.env.PORT || LISTEN_PORT, () => console.log('Servidor NodeJS corriendo.'));
 
+/************************************************
+                    WebSockets
+************************************************/
 const io = require('socket.io')(server);
 
 // Inicio todas las batallas
@@ -330,644 +319,45 @@ io.on('connection', client => {
     });
 });
 
-// Función para verificar que hice login
+
+// Middleware para verificar que hice login
 app.use((req, res, next) => {
     // Verifico que no sea una petición AJAX, que no esté el req.session.user y que no esté haciendo login
-    req.mustLogin = (!req.xhr && !req.session.user && req.url !== "/login");
+    req.mustLogin = (!req.xhr && !req.session.user && req.url !== "/account/login");
     next();
 });
 
-app.get('/', async (req, res, next) => {
+/************************************************
+                Routers Express
+************************************************/
+const accountRouter = require("./routes/account.js");
+app.use("/account", accountRouter);
+
+const battleRouter = require("./routes/battle.js");
+app.use("/battle", battleRouter);
+
+const homeRouter = require("./routes/home.js");
+app.use("/home", homeRouter);
+
+const lobbyRouter = require("./routes/lobby.js");
+app.use("/lobby", lobbyRouter);
+
+const teambuilderRouter = require("./routes/teambuilder.js");
+app.use("/teambuilder", teambuilderRouter);
+
+
+// Redirecciona segun si inicié sesión o no
+app.get("/", async (req, res, next) => {
     try {
         // Si la sesión está iniciada, ir a /home
         if (req.session.user)
             return res.redirect('/home');
 
-        // De otro modo, borrar la sesión y cargar login.handlebars
-        req.session.destroy();
-        res.render('login', null);
+        // De otro modo, ir a /account/login
+        res.redirect('/account/login');
     } catch (err) {
-        return next(ApiError.badRequestError(err.message));
+        next(ApiError.badRequestError(err.message));
     }
-});
-app.get('/createAccount', (req, res, next) => {
-    try {
-        req.session.destroy();
-        res.render('createAccount', null);
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.post('/login', async (req, res, next) => {
-    try {
-        const { email_or_username, password } = req.body;
-
-        if (!email_or_username || !password)
-            return next(ApiError.badRequestError("Los datos ingresados no pueden estar en blanco."));
-
-        // Hago login, si ingresé con el email o con el usuario son dos funciones diferentes
-        const { user, success } = (email_or_username.search("@") != -1) ?
-            await databaseFunctions.loginIntoSystemWithEmail(email_or_username, password) :
-            await databaseFunctions.loginIntoSystemWithUsername(email_or_username, password);
-
-        // Según la respuesta guardada en success, o bien seguimos o bien tiramos errores
-        switch (success) {
-            case "access":
-                if (!user)
-                    return next(ApiError.internalServerError("Ha ocurrido un error con el usuario obtenido."));
-
-                // Guardamos datos en las variables de sesión
-                req.session.user = user;
-
-                const ID_User = req.session.user.ID_User;
-                req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-                // Redirigimos a /home
-                return res.redirect('/home');
-            case "wrong-password":
-                req.mustLogin = true;
-                return next(ApiError.badRequestError("La contraseña es incorrecta."));
-            case "non-existent-email":
-                req.mustLogin = true;
-                return next(ApiError.badRequestError("El email no está registrado."));
-            case "non-existent-username":
-                req.mustLogin = true;
-                return next(ApiError.badRequestError("El nombre de usuario no está registrado."));
-        }
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/home', async (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('home', { user: req.session.user });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/home/modifyUserData', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('modifyUserData', {
-            user: req.session.user,
-            pokemonNamesList: dataArrays.pokemonNamesList
-        });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/home/modifyPassword', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('modifyPassword', { user: req.session.user });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/teambuilder', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('teambuilder', { user: req.session.user, teams: req.session.teams });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/teambuilder/create', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('createTeam', {
-            user: req.session.user,
-            pokemonNamesList: dataArrays.pokemonNamesList,
-            naturesList: dataArrays.naturesList,
-            itemsList: dataArrays.itemsList
-        });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/lobby', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        res.render('lobby', {
-            user: req.session.user,
-            teams: req.session.teams
-        });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/battle', (req, res, next) => {
-    try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
-        const battleTeam = req.session.battleTeam;
-        if (!battleTeam)
-            return next(ApiError.badRequestError("Debe tener seleccionado un equipo de batalla para poder entrar a esta página."));
-
-        res.render('battle', {
-            username: req.session.user.username,
-            profile_photo: req.session.user.profile_photo,
-            battleTeam: battleTeam,
-            pokemonLeft: battleTeam.length
-        });
-    } catch (err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-app.get('/logout', (req, res, next) => {
-    try {
-        req.session.destroy();
-        res.redirect('/');
-    } catch(err) {
-        return next(ApiError.badRequestError(err.message));
-    }
-});
-
-app.post('/createAccount/create', async (req, res, next) => {
-    try {
-        const { email, username, password } = req.body;
-
-        if (!email || !username || !password)
-            return next(ApiError.badRequestError("Faltan ingresar datos."));
-
-        const boolUsernameInDB = await databaseFunctions.usernameAlreadyInDatabase(username);
-        if (boolUsernameInDB)
-            return next(ApiError.badRequestError("El nombre de usuario ya está registrado."));
-
-        const boolEmailInDB = await databaseFunctions.emailAlreadyInDatabase(email);
-        if (boolEmailInDB)
-            return next(ApiError.badRequestError("El email ya está registrado."));
-
-        await databaseFunctions.insertUser(email, username, password);
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.put('/home/modifyUserData/modify', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        console.log(req.body);
-        const { real_name, age, nationality, hobbies, pokemon_favorito } = req.body;
-        if (real_name) {
-            await databaseFunctions.updateUserData(ID_User, "real_name", real_name);
-            req.session.user.real_name = real_name;
-        }
-        if (age) {
-            await databaseFunctions.updateUserData(ID_User, "age", age);
-            req.session.user.age = age;
-        }
-        if (nationality) {
-            await databaseFunctions.updateUserData(ID_User, "nationality", nationality);
-            req.session.user.nationality = nationality;
-        }
-        if (hobbies) {
-            await databaseFunctions.updateUserData(ID_User, "hobbies", hobbies);
-            req.session.user.hobbies = hobbies;
-        }
-        if (pokemon_favorito) {
-            await databaseFunctions.updateUserData(ID_User, "pokemon_favorito", pokemon_favorito);
-            req.session.user.pokemon_favorito = pokemon_favorito;
-        }
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.post('/home/uploadProfilePhoto', upload.single('profile_photo'), async (req, res) => {
-    try {
-        if (!req.file) {
-            return res.render('home', {
-                user: req.session.user,
-                teams: req.session.teams,
-                error: "Debe ingresar una foto de perfil."
-            });
-        }
-        const ID_User = req.session.user.ID_User;
-        await deleteProfilePhoto(ID_User);
-        const profilePhoto = req.file.filename;
-        await databaseFunctions.updateUserData(ID_User, "profile_photo", profilePhoto);
-        req.session.user.profile_photo = profilePhoto;
-        res.render('home', { user: req.session.user, teams: req.session.teams });
-    } catch (err) {
-        console.log(err);
-        if (req.session.user) {
-            res.render('home', { user: req.session.user, teams: req.session.teams, error: "Ocurrió un error. Inténtelo nuevamente." });
-        } else {
-            res.render('login', { error: "Ocurrió un error. Inténtelo nuevamente." });
-        }
-    }
-});
-app.get('/home/modifyPassword/getOldPassword', (req, res, next) => {
-    try {
-        const oldPassword = req.session.user.acc_password;
-        if (!oldPassword)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        res.send({ oldPassword: oldPassword });
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.put('/home/modifyPassword/update', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const newPassword = req.body.newPassword;
-        console.log(req.body);
-        if (!newPassword)
-            return next(ApiError.badRequestError("Falta ingresar la nueva contaseña."));
-
-        await databaseFunctions.updateUserData(ID_User, "acc_password", newPassword);
-        req.session.user.acc_password = newPassword;
-
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.post('/teambuilder/create/newTeam', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const team_name = req.body.team_name;
-        if (!team_name)
-            return next(ApiError.badRequestError("Falta ingresar el nombre del equipo."));
-
-        // Quiero verificar que no tengo otro equipo con el mismo nombre
-        const foundTeam = req.session.teams.find(team => team.team_name == team_name);
-        if (foundTeam)
-            return next(ApiError.badRequestError("Ya tiene un equipo con este nombre. Elija otro nombre."));
-
-        await databaseFunctions.createNewTeam(ID_User, team_name);
-        req.session.selected_team = await databaseFunctions.selectTeamByUserAndTeamName(ID_User, team_name);
-        req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/teambuilder/create/searchPokemonData', async (req, res, next) => {
-    try {
-        const pokemon = req.query.name;
-        if (!dataArrays.pokemonNamesList.includes(pokemon))
-            return next(ApiError.badRequestError("El Pokémon ingresado es incorrecto."))
-
-        const pokemonData = await fetchFunctions.searchPokemonData(pokemon);
-
-        res.status(200).send(pokemonData);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.post('/teambuilder/create/addPokemonToTeam', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        const ID_Team = req.session.selected_team.ID_Team;
-
-        if (!ID_User || !ID_Team)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const pokemon = req.body;
-        if (!pokemon)
-            return next(ApiError.badRequestError("Los datos del Pokémon ingresados son incorrectos."));
-
-        if (pokemon.level > 100 || pokemon.level <= 0)
-            return next(ApiError.badRequestError("El nivel del Pokémon no tiene un valor correcto."));
-
-        if (pokemon.happiness > 255 || pokemon.happiness < 0)
-            return next(ApiError.badRequestError("La felicidad del Pokémon no tiene un valor correcto."));
-
-        for (let stat in pokemon.iv) {
-            if (stat > 31 || stat < 0)
-                return next(ApiError.badRequestError("Los IV's del Pokémon no tienen un valor correcto."));
-        }
-
-        const sumOfEV = Object.values(pokemon.ev).reduce((acc, el) => acc + el, 0);
-        if (sumOfEV > 510 || sumOfEV < 0)
-            return next(ApiError.badRequestError("Los EV's del Pokémon no tienen un valor correcto."));
-
-        const pokemonAmount = await databaseFunctions.addPokemonToTeam(ID_Team, pokemon);
-        req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-        if (pokemonAmount == 6)
-            res.status(200).send({ message: "sixPokemon" });
-        else
-            res.status(200).send({ message: "ok" });
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.delete('/teambuilder/deleteTeam', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const ID_Team = req.query.ID_Team;
-        if (!ID_Team)
-            return next(ApiError.badRequestError("Hubo un error con el equipo seleccionado."));
-
-        await databaseFunctions.deleteTeam(ID_Team);
-        req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.put('/teambuilder/modifyTeamName', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const { ID_Team, newName } = req.body;
-        if (!ID_Team || !newName)
-            return next(ApiError.badRequestError("Falta ingresar el nombre del equipo."));
-
-        // Verifico que no haya otro equipo con este nombre
-        const foundTeam = req.session.teams.find(team => team.team_name == newName && team.ID_Team != ID_Team);
-        if (foundTeam)
-            return next(ApiError.badRequestError("Ya tiene un equipo con este nombre. Elija otro nombre."));
-
-        await databaseFunctions.modifyTeamName(ID_Team, newName);
-        req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.delete('/teambuilder/deletePokemon', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const { ID_Team, pokemonNumber } = req.query;
-        if (!ID_Team || !pokemonNumber)
-            return next(ApiError.badRequestError("Hubo un error con los datos ingresados."));
-
-        const pokemonAmount = (await databaseFunctions.getPokemonArray(ID_Team)).length;
-        if (pokemonAmount == 1)
-            return next(ApiError.badRequestError("No se puede borrar el último Pokémon del equipo. En su lugar, borre el equipo."));
-
-        await databaseFunctions.deletePokemon(ID_Team, pokemonNumber);
-        req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
-
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/teambuilder/updateSelectedTeamToAddPokemon', async (req, res, next) => {
-    try {
-        const ID_User = req.session.user.ID_User;
-        if (!ID_User)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        const team_name = req.query.team_name;
-        if (!team_name) {
-            return next(ApiError.badRequestError("Error en el nombre del equipo ingresado."));
-        }
-        req.session.selected_team = await databaseFunctions.selectTeamByUserAndTeamName(ID_User, team_name);
-
-        const ID_Team = req.session.selected_team.ID_Team;
-        const pokemonAmount = (await databaseFunctions.getPokemonArray(ID_Team)).length;
-
-        if (pokemonAmount == 6)
-            return next(ApiError.badRequestError("Su equipo ya tiene seis Pokémon."));
-
-        res.status(200).send({
-            message: "ok",
-            pokemonNamesList: dataArrays.pokemonNamesList,
-            naturesList: dataArrays.naturesList,
-            itemsList: dataArrays.itemsList
-        });
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/lobby/getChat', async (req, res, next) => {
-    try {
-        const other_user = req.query.other_user;
-        if (!other_user)
-            return next(ApiError.badRequestError("No ingresó ningún usuario."));
-
-        const ID_User1 = req.session.user.ID_User;
-        const this_user = req.session.user.username;
-        if (!ID_User1 || !this_user)
-            return next(ApiError.internalServerError("Error de sesión."));
-
-        if (this_user == other_user)
-            return next(ApiError.badRequestError("No puede iniciar un chat con usted mismo."));
-
-        const ID_User2 = await databaseFunctions.getIDUserByUsername(other_user);
-        if (!ID_User2)
-            return next(ApiError.badRequestError("El usuario que ingresó no existe."));
-
-        // Obtengo un chat entre los usuarios. Si no existe, lo creo
-        let chat = await databaseFunctions.getChatByUsers(ID_User1, ID_User2);
-        if (!chat) {
-            await databaseFunctions.createNewChat(ID_User1, ID_User2);
-            chat = await databaseFunctions.getChatByUsers(ID_User1, ID_User2);
-        }
-
-        res.send({
-            userSender: { id: ID_User1, name: req.session.user.username },
-            userReceiver: { id: ID_User2, name: other_user },
-            ID_Chat: chat.ID_Chat,
-            messages: chat.messages_list
-        });
-    } catch (err) {
-        return next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/lobby/selectTeam', async (req, res, next) => {
-    try {
-        const ID_Team = req.query.ID_Team;
-        if (!ID_Team)
-            return next(ApiError.badRequestError("Hubo un error con el equipo ingresado."));
-
-        const team = await databaseFunctions.getTeamByID(ID_Team);
-        const battleTeam = team.pokemon.map(pokemon => {
-            const pokemonTypes = pokemon.types.map(poketype => dataArrays.allTypes.find(type => poketype.name == type.name));
-            const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
-
-            const move1 = dataArrays.allMoves.find(move => move.id == pokemon.moves[0]);
-            const move2 = dataArrays.allMoves.find(move => move.id == pokemon.moves[1]);
-            const move3 = dataArrays.allMoves.find(move => move.id == pokemon.moves[2]);
-            const move4 = dataArrays.allMoves.find(move => move.id == pokemon.moves[3]);
-
-            const baseStats = fetchFunctions.getPokemonBaseStats(pokemon.name);
-            const hpStat = (pokemon.name != "shedinja") ? mathFunctions.calculateHP(baseStats.hp, pokemon.level, pokemon.ev.hp, pokemon.iv.hp) : 1;
-            let natureMultiplier = 1;
-
-            if (pokemonNature.statUp == "attack") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "attack") natureMultiplier = 0.9;
-            const atkStat = mathFunctions.calculateStat(baseStats.atk, pokemon.level, pokemon.ev.atk, pokemon.iv.atk, natureMultiplier);
-
-            if (pokemonNature.statUp == "defense") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "defense") natureMultiplier = 0.9;
-            const defStat = mathFunctions.calculateStat(baseStats.def, pokemon.level, pokemon.ev.def, pokemon.iv.def, natureMultiplier);
-
-            if (pokemonNature.statUp == "special-attack") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "special-attack") natureMultiplier = 0.9;
-            const spaStat = mathFunctions.calculateStat(baseStats.spa, pokemon.level, pokemon.ev.spa, pokemon.iv.spa, natureMultiplier);
-
-            if (pokemonNature.statUp == "special-defense") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "special-defense") natureMultiplier = 0.9;
-            const spdStat = mathFunctions.calculateStat(baseStats.spd, pokemon.level, pokemon.ev.spd, pokemon.iv.spd, natureMultiplier);
-
-            if (pokemonNature.statUp == "speed") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "speed") natureMultiplier = 0.9;
-            const speStat = mathFunctions.calculateStat(baseStats.spe, pokemon.level, pokemon.ev.spe, pokemon.iv.spe, natureMultiplier);
-            return {
-                name: pokemon.name,
-                types: pokemonTypes,
-                level: pokemon.level,
-                happiness: pokemon.happiness,
-                ability: pokemon.ability,
-                item: pokemon.item,
-                nature: pokemonNature,
-                moves: [
-                    move1,
-                    move2,
-                    move3,
-                    move4
-                ],
-                sprite: pokemon.sprite,
-                stats: {
-                    hp: {
-                        maxHP: hpStat,
-                        currentHP: hpStat
-                    },
-                    atk: {
-                        name: "Ataque",
-                        baseStat: atkStat,
-                        stage: 0
-                    },
-                    def: {
-                        name: "Defensa",
-                        baseStat: defStat,
-                        stage: 0
-                    },
-                    spa: {
-                        name: "Ataque Especial",
-                        baseStat: spaStat,
-                        stage: 0
-                    },
-                    spd: {
-                        name: "Defensa Especial",
-                        baseStat: spdStat,
-                        stage: 0
-                    },
-                    spe: {
-                        name: "Velocidad",
-                        baseStat: speStat,
-                        stage: 0
-                    },
-                    acc: {
-                        name: "Precisión",
-                        stage: 0
-                    },
-                    eva: {
-                        name: "Evasión",
-                        stage: 0
-                    }
-                },
-                crit_rate: 0,
-                happiness: 255,
-                isAlive: true,
-                status: "OK",
-                otherStatus: {
-                    confused: false,
-                    flinched: false,
-                    hasToRest: false,
-                    bounded: false,
-                    cursed: false,
-                    drowsy: false,
-                    encore: false,
-                    identified: false,
-                    infatuated: false,
-                    leech_seed: false,
-                    nightmare: false,
-                    perish_song: false,
-                    taunted: false,
-                    tormented: false,
-                    bracing: false,
-                    charging_turn: false,
-                    center_of_attention: false,
-                    defense_curl: false,
-                    rooting: false,
-                    magic_coat: false,
-                    minimized: false,
-                    protected: false,
-                    flying: false,
-                    digging: false,
-                    diving: false,
-                    substitute: false,
-                    aiming: false,
-                    thrashing: false,
-                    transformed: false,
-                    safeguard: false
-                },
-                canChange: true
-            }
-        });
-
-        req.session.battleTeam = battleTeam;
-        res.sendStatus(200);
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/battle/getBattleTeam', async (req, res, next) => {
-    try {
-        if (!req.session.user || !req.session.battleTeam)
-            next(ApiError.internalServerError("Error de sesión."));
-
-        res.status(200).send({
-            id: req.session.user.ID_User,
-            username: req.session.user.username,
-            profile_photo: req.session.user.profile_photo,
-            battleTeam: req.session.battleTeam,
-            activePokemon: null,
-            hasPlayed: false,
-            chosenAction: null,
-            time: {
-                timer: null,
-                timeLeft: 10000,
-                startTime: null,
-                endTime: null
-            }
-        });
-    } catch (err) {
-        next(ApiError.internalServerError(err.message));
-    }
-});
-app.get('/battle/returnLobby', (req, res) => {
-    res.redirect('/lobby');
 });
 
 // Al final de todo, usamos el errorHandler

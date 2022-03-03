@@ -1,6 +1,6 @@
 const modifyUserDataButton = document.getElementById("modifyUserDataButton");
 modifyUserDataButton.addEventListener("click", async () => {
-    modifyUserButton.disabled = true;
+    modifyUserDataButton.disabled = true;
 
     // Pido los datos y creo un objeto con ellos
     const object = {
@@ -13,7 +13,7 @@ modifyUserDataButton.addEventListener("click", async () => {
 
     // Hago el pedido al servidor
     try {
-        await nodeReq.put('/home/modifyUserData/modify', object);
+        await nodeReq.put('/home/user-data', object);
         createModal(
             "modifyUserDataModal",
             "¡Felicidades!",
@@ -24,6 +24,6 @@ modifyUserDataButton.addEventListener("click", async () => {
     } catch (err) {
         return handleAxiosError(err);
     } finally {
-        modifyUserButton.disabled = false;
+        modifyUserDataButton.disabled = false;
     }
 });

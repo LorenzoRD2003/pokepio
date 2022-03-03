@@ -51,7 +51,7 @@ if (addNewTeamButton) {
 
         // Hago el pedido de creación al servidor
         try {
-            await nodeReq.post('/teambuilder/create/newTeam', object);
+            await nodeReq.post('/teambuilder/team', object);
             createSuccessModal("newTeamModal", `Su equipo, ${object.team_name}, fue creado satisfactoriamente.`);
 
             // Cambio el div que se muestra en pantalla por el de selección de Pokémon
@@ -88,7 +88,7 @@ searchPokemonDataButton.addEventListener("click", async () => {
         // Hago el pedido al servidor
         const res = (await nodeReq({
             method: 'get',
-            url: '/teambuilder/create/searchPokemonData',
+            url: '/pokemon',
             params: {
                 name: getValueByID("pokemon-selector")
             }
@@ -451,7 +451,7 @@ const addPokemonToTeam = async (addPokemonToTeamButton, pokemon) => {
 
     // Hago un pedido al servidor para añadir el Pokémon
     try {
-        const res = (await nodeReq.post('/teambuilder/create/addPokemonToTeam', object)).data;
+        const res = (await nodeReq.post('/pokemon', object)).data;
         if (res.message == "ok") {
             // Si salió bien, vuelvo al div de selección de Pokémon
             createSuccessModal("addPokemonToTeamModal", "El Pokémon fue añadido a su equipo satisfactoriamente.");
@@ -518,7 +518,7 @@ teams.forEach(team => {
         try {
             const res = (await nodeReq({
                 method: "get",
-                url: "/teambuilder/updateSelectedTeamToAddPokemon",
+                url: "/teambuilder/team/pokemon",
                 params: {
                     team_name: team_name
                 }
@@ -589,7 +589,7 @@ teams.forEach(team => {
 
             // Hago el pedido de modificación de nombre
             try {
-                await nodeReq.put('/teambuilder/modifyTeamName', object);
+                await nodeReq.put('/teambuilder/team', object);
                 createSuccessModal("modifyTeamNameModal", `El nombre del equipo fue cambiado satisfactoriamente a ${object.newName}.`);
 
                 // Modifico el nombre que aparece en el titulo y el botón 
@@ -619,7 +619,7 @@ teams.forEach(team => {
                 try {
                     await nodeReq({
                         method: "delete",
-                        url: '/teambuilder/deleteTeam',
+                        url: '/teambuilder/team',
                         params: {
                             ID_Team: ID_Team
                         }
@@ -656,7 +656,7 @@ teams.forEach(team => {
             try {
                 await nodeReq({
                     method: "delete",
-                    url: "/teambuilder/deletePokemon",
+                    url: "/teambuilder/pokemon",
                     params: {
                         ID_Team: ID_Team,
                         pokemonNumber: parseInt(pokemonDiv.dataset.number)

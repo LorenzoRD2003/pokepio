@@ -45,13 +45,13 @@
                 </button>
             </div>
         </div>
-        <form action="/login" method="POST" class="px-5 pt-3 col-sm-12 col-lg-6 bg-light mb-3 p-3 border">
+        <form action="/account/login" method="POST" class="px-5 pt-3 col-sm-12 col-lg-6 bg-light mb-3 p-3 border">
             <div class="my-3 form-group">
                 <h2>Ingresar al sistema</h2>
             </div>
             {{> errorAlert}}
             <div class="mb-3 form-group">
-                <label for="loginEmailID" class="form-label" onclick="playAudio()">Email o nombre de usuario</label>
+                <label for="loginEmailID" class="form-label">Email o nombre de usuario</label>
                 <input type="text" class="form-control" name="email_or_username" value="">
             </div>
             <div class="mb-3 form-group">
@@ -62,7 +62,7 @@
                 <input type="submit" class="btn btn-primary btn-lg" value="Ingresar">
             </div>
             <div class="mb-3 form-check">
-                <a href="/createAccount" class="btn btn-secondary">Crear Cuenta</a>
+                <a href="/account/create" class="btn btn-secondary">Crear Cuenta</a>
             </div>
         </form>
     </div>
