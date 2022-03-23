@@ -53,16 +53,9 @@ const apiErrorHandler = (err, req, res, next) => {
         if (req.xhr)
             // Si es cuando hacemos un pedido AJAX (con XMLHttpRequest)
             return res.status(err.code).send(err.message);
-        else {
-            // Si es cuando hacemos otro pedido (form/link)
-
-            // Manejo para errores de inicio de sesión
-            if (req.mustLogin)
-                return res.status(err.code).render("login", { error: err });
-
-            // De otro modo, vamos a la página de error
+        else
+            // Si es cuando hacemos otro pedido (form/link), vamos a la página de error
             return res.status(err.code).render("error", { error: err });
-        }
     }
 
     // De otro modo, devolvemos mensajes genéricos
@@ -78,7 +71,7 @@ const apiErrorHandler = (err, req, res, next) => {
 }
 
 const api404Handler = (req, res) => {
-    if (res.xhr)
+    if (req.xhr)
         res.status(404).send("El recurso solicitado no fue encontrado.");
     else
         res.status(404).render("error", {

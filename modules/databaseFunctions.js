@@ -249,6 +249,66 @@ exports.deletePokemon = async (ID_Team, pokemonNumber) => {
 }
 
 /**
+ * Pone a todos los usuarios en OFFLINE.
+ */
+exports.setAllUsersOffline = async () => {
+    await MySQL.realizarQuery(`
+        update ${tablaUsuarios}
+        set is_online = false;
+    `);
+}
+
+/**
+ * Checkea si un usuario está online.
+ * @param {Nombre} ID_User ID del usuario.
+ * @returns Si está ONLINE (true) u OFFLINE (false). 
+ */
+exports.checkUserOnline = async ID_User => {
+    const user = await MySQL.realizarQuery(`
+        select is_online from ${tablaUsuarios}
+        where ID_User = ${ID_User};
+    `);
+    return user[0].is_online;
+}
+
+/**
+ * Pone en ONLINE al usuario especificado.
+ * @param {Number} ID_User ID del usuario. 
+ */
+exports.setUserOnline = async ID_User => {
+    await MySQL.realizarQuery(`
+        update ${tablaUsuarios}
+        set is_online = true
+        where ID_User = ${ID_User};
+    `);
+}
+
+/**
+ * Pone en OFFLINE al usuario especificado.
+ * @param {Number} ID_User ID del usuario. 
+ */
+exports.setUserOffline = async ID_User => {
+    await MySQL.realizarQuery(`
+        update ${tablaUsuarios}
+        set is_online = false
+        where ID_User = ${ID_User};
+    `);
+}
+
+/**
+ * Devuelve una lista de los nombres de usuario de los usuarios conectados
+ * (excepto por el usuario que está haciendo el pedido).
+ * @param {Number} ID_User ID del usuario.
+ * @returns Lista de nombres de usuario.
+ */
+exports.getOnlineUsers = async ID_User => {
+    return (await MySQL.realizarQuery(`
+        select username from ${tablaUsuarios}
+        where is_online = true and ID_User != ${ID_User};
+    `));
+}
+
+/**
  * Crea un chat entre dos usuarios.
  * @param {Number} ID_User1 ID del primer usuario.
  * @param {Number} ID_User2 ID del segundo usuario. 

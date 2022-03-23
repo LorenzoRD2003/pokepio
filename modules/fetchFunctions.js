@@ -1,4 +1,4 @@
-const dataArrays = require("./dataArrays");
+const { pokemonList, allTypes, allAbilities, allMoves } = require("./dataArrays");
 const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fetch(...args));
 const fetchFunction = async link => {
     const response = await fetch(link);
@@ -174,11 +174,11 @@ exports.allAbilitiesList = async () => {
  * @returns Objeto con los datos del Pokémon.
  */
 exports.searchPokemonData = async pokemon => {
-    const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
+    const pkmnFound = pokemonList.find(pkmn => pkmn.name == pokemon);
     const name = pkmnFound.name;
-    const types = pkmnFound.types.map(pkmnType => dataArrays.allTypes.find(type => type.name == pkmnType));
-    const abilities = pkmnFound.abilities.map(pkmnAbility => dataArrays.allAbilities.find(ability => ability.name == pkmnAbility)).filter(ability => ability);
-    const moves = pkmnFound.moves.map(pkmnMove => dataArrays.allMoves.find(move => move.name == pkmnMove)).filter(move => move);
+    const types = pkmnFound.types.map(pkmnType => allTypes.find(type => type.name == pkmnType));
+    const abilities = pkmnFound.abilities.map(pkmnAbility => allAbilities.find(ability => ability.name == pkmnAbility)).filter(ability => ability);
+    const moves = pkmnFound.moves.map(pkmnMove => allMoves.find(move => move.name == pkmnMove)).filter(move => move);
     const image = pkmnFound.image;
     const shinyImage = pkmnFound.shinyImage;
     const base_stats = pkmnFound.base_stats;
@@ -200,6 +200,6 @@ exports.searchPokemonData = async pokemon => {
  */
 exports.getPokemonBaseStats = pokemon => {
     pokemon = capitalizeFirstLetter(pokemon);
-    const pkmnFound = dataArrays.pokemonList.find(pkmn => pkmn.name == pokemon);
+    const pkmnFound = pokemonList.find(pkmn => pkmn.name == pokemon);
     return pkmnFound.base_stats;
 }

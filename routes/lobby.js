@@ -1,20 +1,29 @@
 const { ApiError } = require('../modules/error-handler.js');
 const databaseFunctions = require("../modules/databaseFunctions.js");
+const { allMoves, allTypes, naturesList } = require("../modules/dataArrays");
+const fetchFunctions = require('../modules/fetchFunctions');
+const { Pokemon } = require('../modules/pokemon-logic/pokemon.js');
+const { Move } = require('../modules/pokemon-logic/move.js');
 
 const express = require("express");
 const router = new express.Router();
 
-router.get('/', (req, res, next) => {
+router.get('/', async (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
+        const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+        return next(ApiError.internalServerError("Error de sesión."));
+
+        // Lista de otros usuarios conectados
+        const onlineUsers = await databaseFunctions.getOnlineUsers(ID_User);
 
         res.render('lobby', {
             user: req.session.user,
-            teams: req.session.teams
+            teams: req.session.teams,
+            onlineUsers: onlineUsers
         });
     } catch (err) {
-        return next(ApiError.badRequestError(err.message));
+        return next(ApiError.internalServerError(err.message));
     }
 });
 
@@ -61,133 +70,38 @@ router.get('/team', async (req, res, next) => {
             return next(ApiError.badRequestError("Hubo un error con el equipo ingresado."));
 
         const team = await databaseFunctions.getTeamByID(ID_Team);
-        const battleTeam = team.pokemon.map(pokemon => {
-            const pokemonTypes = pokemon.types.map(poketype => dataArrays.allTypes.find(type => poketype.name == type.name));
-            const pokemonNature = dataArrays.naturesList.find(nature => nature.name == pokemon.nature);
-
-            const move1 = dataArrays.allMoves.find(move => move.id == pokemon.moves[0]);
-            const move2 = dataArrays.allMoves.find(move => move.id == pokemon.moves[1]);
-            const move3 = dataArrays.allMoves.find(move => move.id == pokemon.moves[2]);
-            const move4 = dataArrays.allMoves.find(move => move.id == pokemon.moves[3]);
-
+        const battle_team = team.pokemon.map(pokemon => {
+            const pokemonTypes = pokemon.types.map(poketype => allTypes.find(type => poketype.name == type.name));
+            const pokemonNature = naturesList.find(nature => nature.name == pokemon.nature);
             const baseStats = fetchFunctions.getPokemonBaseStats(pokemon.name);
-            const hpStat = (pokemon.name != "shedinja") ? mathFunctions.calculateHP(baseStats.hp, pokemon.level, pokemon.ev.hp, pokemon.iv.hp) : 1;
-            let natureMultiplier = 1;
 
-            if (pokemonNature.statUp == "attack") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "attack") natureMultiplier = 0.9;
-            const atkStat = mathFunctions.calculateStat(baseStats.atk, pokemon.level, pokemon.ev.atk, pokemon.iv.atk, natureMultiplier);
+            const move1 = allMoves.find(move => move.id == pokemon.moves[0]);
+            const move2 = allMoves.find(move => move.id == pokemon.moves[1]);
+            const move3 = allMoves.find(move => move.id == pokemon.moves[2]);
+            const move4 = allMoves.find(move => move.id == pokemon.moves[3]);
 
-            if (pokemonNature.statUp == "defense") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "defense") natureMultiplier = 0.9;
-            const defStat = mathFunctions.calculateStat(baseStats.def, pokemon.level, pokemon.ev.def, pokemon.iv.def, natureMultiplier);
-
-            if (pokemonNature.statUp == "special-attack") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "special-attack") natureMultiplier = 0.9;
-            const spaStat = mathFunctions.calculateStat(baseStats.spa, pokemon.level, pokemon.ev.spa, pokemon.iv.spa, natureMultiplier);
-
-            if (pokemonNature.statUp == "special-defense") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "special-defense") natureMultiplier = 0.9;
-            const spdStat = mathFunctions.calculateStat(baseStats.spd, pokemon.level, pokemon.ev.spd, pokemon.iv.spd, natureMultiplier);
-
-            if (pokemonNature.statUp == "speed") natureMultiplier = 1.1;
-            if (pokemonNature.statDown == "speed") natureMultiplier = 0.9;
-            const speStat = mathFunctions.calculateStat(baseStats.spe, pokemon.level, pokemon.ev.spe, pokemon.iv.spe, natureMultiplier);
-            return {
-                name: pokemon.name,
-                types: pokemonTypes,
-                level: pokemon.level,
-                happiness: pokemon.happiness,
-                ability: pokemon.ability,
-                item: pokemon.item,
-                nature: pokemonNature,
-                moves: [
-                    move1,
-                    move2,
-                    move3,
-                    move4
+            return new Pokemon(
+                pokemon.name,
+                pokemonTypes,
+                pokemon.level,
+                pokemon.happiness,
+                pokemon.ability,
+                pokemon.item,
+                pokemonNature,
+                [
+                    new Move(move1.name, move1.power, move1.type, move1.pp, move1.accuracy, move1.priority, move1.damage_class, move1.effect_chance, move1.meta.crit_rate),
+                    new Move(move2.name, move2.power, move2.type, move2.pp, move2.accuracy, move2.priority, move2.damage_class, move2.effect_chance, move2.meta.crit_rate),
+                    new Move(move3.name, move3.power, move3.type, move3.pp, move3.accuracy, move3.priority, move3.damage_class, move3.effect_chance, move3.meta.crit_rate),
+                    new Move(move4.name, move4.power, move4.type, move4.pp, move4.accuracy, move4.priority, move4.damage_class, move4.effect_chance, move4.meta.crit_rate)
                 ],
-                sprite: pokemon.sprite,
-                stats: {
-                    hp: {
-                        maxHP: hpStat,
-                        currentHP: hpStat
-                    },
-                    atk: {
-                        name: "Ataque",
-                        baseStat: atkStat,
-                        stage: 0
-                    },
-                    def: {
-                        name: "Defensa",
-                        baseStat: defStat,
-                        stage: 0
-                    },
-                    spa: {
-                        name: "Ataque Especial",
-                        baseStat: spaStat,
-                        stage: 0
-                    },
-                    spd: {
-                        name: "Defensa Especial",
-                        baseStat: spdStat,
-                        stage: 0
-                    },
-                    spe: {
-                        name: "Velocidad",
-                        baseStat: speStat,
-                        stage: 0
-                    },
-                    acc: {
-                        name: "Precisión",
-                        stage: 0
-                    },
-                    eva: {
-                        name: "Evasión",
-                        stage: 0
-                    }
-                },
-                crit_rate: 0,
-                happiness: 255,
-                isAlive: true,
-                status: "OK",
-                otherStatus: {
-                    confused: false,
-                    flinched: false,
-                    hasToRest: false,
-                    bounded: false,
-                    cursed: false,
-                    drowsy: false,
-                    encore: false,
-                    identified: false,
-                    infatuated: false,
-                    leech_seed: false,
-                    nightmare: false,
-                    perish_song: false,
-                    taunted: false,
-                    tormented: false,
-                    bracing: false,
-                    charging_turn: false,
-                    center_of_attention: false,
-                    defense_curl: false,
-                    rooting: false,
-                    magic_coat: false,
-                    minimized: false,
-                    protected: false,
-                    flying: false,
-                    digging: false,
-                    diving: false,
-                    substitute: false,
-                    aiming: false,
-                    thrashing: false,
-                    transformed: false,
-                    safeguard: false
-                },
-                canChange: true
-            }
+                pokemon.sprite,
+                baseStats,
+                pokemon.ev,
+                pokemon.iv
+            );
         });
 
-        req.session.battleTeam = battleTeam;
+        req.session.battle_team = battle_team;
         res.sendStatus(200);
     } catch (err) {
         next(ApiError.internalServerError(err.message));

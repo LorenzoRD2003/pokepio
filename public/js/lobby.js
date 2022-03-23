@@ -45,6 +45,16 @@ socket.on('chat-message', message => {
         document.getElementById("messageToSend").value = "";
 });
 
+const other_user = document.getElementById("other-user");
+const connectedUsers = document.querySelectorAll(".connected-user");
+connectedUsers.forEach(connectedUser => {
+    connectedUser.addEventListener("click", () => {
+        connectedUsers.forEach(connectedUser => connectedUser.classList.remove("active"));
+        connectedUser.classList.add("active");
+        other_user.value = connectedUser.textContent;
+    });
+});
+
 const createChatButton = document.getElementById("createChatButton");
 createChatButton.addEventListener("click", async () => {
     createChatButton.disabled = true;
@@ -55,13 +65,15 @@ createChatButton.addEventListener("click", async () => {
 
     // Hago el pedido al servidor
     try {
-        const res = (await axios({
+        const res = (await nodeReq({
             method: "get",
             url: "/lobby/chat",
             params: {
-                other_user: getValueByID("other-user")
+                other_user: other_user.value
             }
         })).data;
+
+        console.log(res);
 
         // Vacío la lista de mensajes
         const messagesDiv = document.getElementById("messagesDiv");

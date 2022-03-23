@@ -1,6 +1,6 @@
 {{> navbar }}
 <div class="container-sm">
-    <div class="mt-5 bg-light mb-3 p-3 border">
+    <div class="px-5 py-3 mt-5 mb-3 bg-light border">
         <div class="my-3 form-group">
             <h2>Lobby de batallas</h2>
         </div>
@@ -22,15 +22,33 @@
 
 <div class="container-sm mt-5">
     <div class="px-5 pt-3 bg-light mb-3 p-3 border">
-        <div class="my-3 form-group">
-            <h3>Chat privado</h3>
-        </div>
-        <div class="mb-3 form-group">
-            <label for="other-user">Ingrese nombre del usuario con el que chatear</label>
-            <input type="text" class="form-control" id="other-user" value="">
-        </div>
-        <div class="mb-3 form-check">
-            <button id="createChatButton" class="btn btn-primary btn-lg">Crear chat entre usuarios</button>
+        <div class="row justify-content-around">
+            <div class="col-sm-12 col-lg-6">
+                <div class="my-3 form-group">
+                    <h3>Chat privado</h3>
+                </div>
+                <div class="mb-3 form-group">
+                    <label for="other-user">Ingrese nombre del usuario con el que chatear</label>
+                    <input type="text" class="form-control" id="other-user" value="">
+                </div>
+                <div class="mb-3 form-check">
+                    <button id="createChatButton" class="btn btn-primary btn-lg">Crear chat entre usuarios</button>
+                </div>
+            </div>
+            {{#if onlineUsers}}
+            <div class="col-sm-12 col-lg-4">
+                <div class="my-3 form-group">
+                    <h5>Usuarios conectados</h5>
+                    <div class="mb-3 form-group">
+                        <ul class="list-group">
+                            {{#each onlineUsers}}
+                            <li class="list-group-item list-group-item-action connected-user">{{this.username}}</li>
+                            {{/each}}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {{/if}}
         </div>
     </div>
     <div id="chatDiv" class="px-5 pt-3 bg-light mb-3 p-3 border" hidden>

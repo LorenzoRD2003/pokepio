@@ -1,40 +1,38 @@
 const { ApiError } = require('../modules/error-handler.js');
 const databaseFunctions = require("../modules/databaseFunctions.js");
+const { pokemonNamesList, naturesList, itemsList } = require("../modules/dataArrays");
+const fetchFunctions = require('../modules/fetchFunctions');
+const { Pokemon } = require('../modules/pokemon-logic/pokemon.js');
+const { Move } = require('../modules/pokemon-logic/move.js');
 
 const express = require("express");
 const router = new express.Router();
 
 router.get('/', (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
         res.render('teambuilder', {
             user: req.session.user,
             teams: req.session.teams
         });
     } catch (err) {
-        return next(ApiError.badRequestError(err.message));
+        return next(ApiError.internalServerError(err.message));
     }
 });
 
 router.get('/create', (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
         res.render('createTeam', {
             user: req.session.user,
-            pokemonNamesList: dataArrays.pokemonNamesList,
-            naturesList: dataArrays.naturesList,
-            itemsList: dataArrays.itemsList
+            pokemonNamesList: pokemonNamesList,
+            naturesList: naturesList,
+            itemsList: itemsList
         });
     } catch (err) {
-        return next(ApiError.badRequestError(err.message));
+        return next(ApiError.internalServerError(err.message));
     }
 });
 
-router.get('/team/pokemon', async (req, res, next) => {
+router.get('/team', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
         if (!ID_User)
@@ -54,9 +52,9 @@ router.get('/team/pokemon', async (req, res, next) => {
 
         res.status(200).send({
             message: "ok",
-            pokemonNamesList: dataArrays.pokemonNamesList,
-            naturesList: dataArrays.naturesList,
-            itemsList: dataArrays.itemsList
+            pokemonNamesList: pokemonNamesList,
+            naturesList: naturesList,
+            itemsList: itemsList
         });
     } catch (err) {
         next(ApiError.internalServerError(err.message));
@@ -134,7 +132,7 @@ router.delete('/team', async (req, res, next) => {
 router.get('/pokemon', async (req, res, next) => {
     try {
         const pokemon = req.query.name;
-        if (!dataArrays.pokemonNamesList.includes(pokemon))
+        if (!pokemonNamesList.includes(pokemon))
             return next(ApiError.badRequestError("El Pokémon ingresado es incorrecto."))
 
         const pokemonData = await fetchFunctions.searchPokemonData(pokemon);

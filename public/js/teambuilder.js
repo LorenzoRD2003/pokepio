@@ -17,7 +17,7 @@ const calculateStat = (base_stat, level, ev, iv, natureMultiplier) => {
     level = parseInt(level);
     ev = parseInt(ev);
     iv = parseInt(iv);
-    natureMultiplier = parseInt(natureMultiplier);
+    natureMultiplier = parseFloat(natureMultiplier);
 
     return Math.floor((Math.floor(0.01 * (2 * base_stat + iv + Math.floor(0.25 * ev)) * level) + 5) * natureMultiplier);
 }
@@ -88,7 +88,7 @@ searchPokemonDataButton.addEventListener("click", async () => {
         // Hago el pedido al servidor
         const res = (await nodeReq({
             method: 'get',
-            url: '/pokemon',
+            url: '/teambuilder/pokemon',
             params: {
                 name: getValueByID("pokemon-selector")
             }
@@ -451,7 +451,7 @@ const addPokemonToTeam = async (addPokemonToTeamButton, pokemon) => {
 
     // Hago un pedido al servidor para añadir el Pokémon
     try {
-        const res = (await nodeReq.post('/pokemon', object)).data;
+        const res = (await nodeReq.post('/teambuilder/pokemon', object)).data;
         if (res.message == "ok") {
             // Si salió bien, vuelvo al div de selección de Pokémon
             createSuccessModal("addPokemonToTeamModal", "El Pokémon fue añadido a su equipo satisfactoriamente.");
@@ -518,7 +518,7 @@ teams.forEach(team => {
         try {
             const res = (await nodeReq({
                 method: "get",
-                url: "/teambuilder/team/pokemon",
+                url: "/teambuilder/team",
                 params: {
                     team_name: team_name
                 }

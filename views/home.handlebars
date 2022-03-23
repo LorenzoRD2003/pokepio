@@ -2,26 +2,27 @@
 
 <div class="container-sm">
     <div class="mt-5 bg-light mb-3 p-3 border">
+        {{> errorAlert}}
         <div class="row my-3 form-group">
+        {{#with user}}
             <div class="col-sm-6">
-                <h1>Mi usuario: {{user.username}}</h1>
+                <h1>Mi usuario: {{username}}</h1>
             </div>
         </div>
-        {{> errorAlert}}
         <div class="row my-3">
             <div class="col-sm-12 col-lg-6">
                 <div class="my-3 form-group">
                     <h3>Datos obligatorios</h3>
                 </div>
                 <div class="mb-3 form-group">
-                    <b>Email:</b> {{user.email}}
+                    <b>Email:</b> {{email}}
                 </div>
                 <div class="mb-3 form-group">
-                    <b>Nombre de usuario:</b> {{user.username}}
+                    <b>Nombre de usuario:</b> {{username}}
                 </div>
                 <div class="col-sm-6 text-center">
-                    {{#if user.profile_photo}}
-                    <img src="/img/profile_photos/{{user.profile_photo}}" class="profile-photo rounded-circle">
+                    {{#if profile_photo}}
+                    <img src="/img/profile_photos/{{profile_photo}}" class="profile-photo rounded-circle">
                     {{else}}
                     <b>Sin foto de perfil</b>
                     {{/if}}
@@ -32,41 +33,42 @@
                     <h3>Datos opcionales</h3>
                 </div>
                 <div class="mb-3 form-group">
-                    {{#if user.real_name}}
-                    <b>Nombre real:</b> {{user.real_name}}
+                    {{#if real_name}}
+                    <b>Nombre real:</b> {{real_name}}
                     {{else}}
                     <b>Nombre real:</b> Desconocido
                     {{/if}}
                 </div>
                 <div class="mb-3 form-group">
-                    {{#if user.age}}
-                    <b>Edad:</b> {{user.age}}
+                    {{#if age}}
+                    <b>Edad:</b> {{age}}
                     {{else}}
                     <b>Edad:</b> Desconocida
                     {{/if}}
                 </div>
                 <div class="mb-3 form-group">
-                    {{#if user.nationality}}
-                    <b>Nacionalidad:</b> {{user.nationality}}
+                    {{#if nationality}}
+                    <b>Nacionalidad:</b> {{nationality}}
                     {{else}}
                     <b>Nacionalidad:</b> Desconocida
                     {{/if}}
                 </div>
                 <div class="mb-3 form-group">
-                    {{#if user.hobbies}}
-                    <b>Hobbies:</b> {{user.hobbies}}
+                    {{#if hobbies}}
+                    <b>Hobbies:</b> {{hobbies}}
                     {{else}}
                     <b>Hobbies: </b> Desconocidos
                     {{/if}}
                 </div>
                 <div class="mb-3 form-group">
-                    {{#if user.pokemon_favorito}}
-                    <b>Pokémon favorito:</b> {{user.pokemon_favorito}}
+                    {{#if pokemon_favorito}}
+                    <b>Pokémon favorito:</b> {{pokemon_favorito}}
                     {{else}}
                     <b>Pokémon favorito:</b> Desconocido
                     {{/if}}
                 </div>
             </div>
+        {{/with}}
         </div>
         <div class="row my-3 text-center">
             <form action="/home/uploadProfilePhoto" method="POST" class="col-sm-12 col-lg-4"

@@ -1,5 +1,6 @@
 const { ApiError } = require('../modules/error-handler.js');
 const databaseFunctions = require("../modules/databaseFunctions.js");
+const { pokemonNamesList } = require("../modules/dataArrays.js");
 
 // Para el ingreso de imágenes
 const multer = require('multer');
@@ -24,41 +25,44 @@ const router = new express.Router();
 
 router.get('/', async (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
         res.render('home', { user: req.session.user });
     } catch (err) {
-        next(ApiError.badRequestError(err.message));
+        next(ApiError.internalServerError(err.message));
     }
 });
 
-router.get('/logout', (req, res, next) => {
+router.get('/logout', async (req, res, next) => {
     try {
+        const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+        
+        await databaseFunctions.setUserOffline(ID_User);
         req.session.destroy();
+        
         res.redirect('/account/login');
     } catch(err) {
-        return next(ApiError.badRequestError(err.message));
+        return next(ApiError.internalServerError(err.message));
     }
 });
 
 router.get('/user-data', (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
         res.render('modifyUserData', {
             user: req.session.user,
-            pokemonNamesList: dataArrays.pokemonNamesList
+            pokemonNamesList: pokemonNamesList
         });
     } catch (err) {
-        next(ApiError.badRequestError(err.message));
+        next(ApiError.internalServerError(err.message));
     }
 });
 
 router.put('/user-data', async (req, res, next) => {
     try {
         const ID_User = req.session.user.ID_User;
+        if (!ID_User)
+            return next(ApiError.internalServerError("Error de sesión."));
+
         const { real_name, age, nationality, hobbies, pokemon_favorito } = req.body;
         if (real_name) {
             await databaseFunctions.updateUserData(ID_User, "real_name", real_name);
@@ -88,12 +92,9 @@ router.put('/user-data', async (req, res, next) => {
 
 router.get('/change-password', (req, res, next) => {
     try {
-        if (req.mustLogin)
-            return next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
-
         res.render('modifyPassword', { user: req.session.user });
     } catch (err) {
-        next(ApiError.badRequestError(err.message));
+        next(ApiError.internalServerError(err.message));
     }
 });
 

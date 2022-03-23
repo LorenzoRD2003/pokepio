@@ -12,7 +12,7 @@ const nodeReq = axios.create({
 nodeReq.interceptors.request.use(req => {
     try {
         return req;
-    } catch(err) {
+    } catch (err) {
         return Promise.reject(err);
     }
 }, err => Promise.reject(err));
@@ -27,16 +27,28 @@ nodeReq.interceptors.response.use(res => {
 
 const handleAxiosError = err => {
     if (err.response) {
-        createErrorModal(
-            "errorModal",
-            `Ocurrió un error. Inténtelo nuevamente más tarde.
-            <br><br><b>Error ${err.response.status}: ${err.response.statusText}.
-            <br>${err.response.data}</b>`
-        );
+        // Un modal si es error 401, otro si es cualquier otro error en la respuesta del servidor
+        if (err.response.status == 401) {
+            createModal(
+                "errorModal",
+                "¡Alerta!",
+                `Debe iniciar sesión para poder hacer este pedido.
+                <br><br><b>Error ${err.response.status}: ${err.response.statusText}.
+                <br>${err.response.data}</b>`,
+                "Volver a inicio de sesión",
+                () => document.getElementById("rootLink").click()
+            );
+        } else {
+            createErrorModal(
+                "errorModal",
+                `Ocurrió un error. Inténtelo nuevamente más tarde.
+                <br><br><b>Error ${err.response.status}: ${err.response.statusText}.
+                <br>${err.response.data}</b>`
+            );
+        }
     } else if (err.request) {
         console.dir(err.request);
     } else {
-        console.log(err);
         createErrorModal(
             "errorModal",
             `Ocurrió un error. Inténtelo nuevamente más tarde.
