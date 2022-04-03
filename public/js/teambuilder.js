@@ -156,10 +156,21 @@ searchPokemonDataButton.addEventListener("click", async () => {
         const selectElem = document.createElement("select");
         selectElem.innerHTML = "<option disabled selected>Seleccione un movimiento: </option>";
 
+        // Ordeno la lista segun el nombre de movimiento
+        const sortedMoves = res.moves.sort((move1, move2) => {
+            if (move1.name > move2.name)
+                return 1;
+            
+            if (move1.name < move2.name)
+                return -1;
+            
+            return 0;
+        })
+
         // A cada movimiento, lo agrego a la lista
-        res.moves.forEach(move => {
+        sortedMoves.forEach(move => {
             const optionElem = document.createElement("option");
-            optionElem.textContent = `${capitalizeFirstLetter(move.name)} - ${capitalizeFirstLetter(move.damage_class)}`;
+            optionElem.textContent = `${capitalizeFirstLetter(move.name)} - ${capitalizeFirstLetter(move.damage_class)} - ${capitalizeFirstLetter(move.type)}`;
             if (move.power) {
                 optionElem.textContent += ` - Poder: ${move.power}`;
             }

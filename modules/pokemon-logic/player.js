@@ -2,6 +2,7 @@
 const { Pokemon } = require("./pokemon.js");
 const { allMoves, allTypes, naturesList } = require("../dataArrays");
 const fetchFunctions = require('../fetchFunctions');
+const { capitalize } = require("../mathFunctions");
 
 /**
  * Clase para un jugador.
@@ -66,7 +67,8 @@ class Player {
             username: this.username,
             profile_photo: this.profile_photo,
             battle_team: this.battle_team,
-            active_pokemon: this.active_pokemon
+            active_pokemon: this.active_pokemon,
+            active_pokemon_index: this.active_pokemon_index,
         }
     }
 
@@ -75,9 +77,15 @@ class Player {
         this.chosen_action = action;
     }
 
-    assignActivePokemon(index) {
+    /**
+     * Asigna el Pokémon activo.
+     * @param {Number} index Índice del Pokémon 
+     * @param {Array} messages Vector de mensajes.
+     */
+    assignActivePokemon(index, messages) {
         this.active_pokemon = this.battle_team[index];
         this.active_pokemon_index = index;
+        messages.push(`${this.username} elige a ${capitalize(this.active_pokemon.name)}.`);
     }
 
     pauseCounter() {

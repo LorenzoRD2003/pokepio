@@ -28,6 +28,20 @@ class Battle {
         this.weather = null;
         this.active_timer = false;
         this.messages = [];
+        this.turn = 0;
+    }
+
+    /**
+     * Devuelvo los datos que quiero para mandar al cliente
+     */
+    data() {
+        return {
+            user1: this.user1.data(),
+            user2: this.user2.data(),
+            weather: this.weather,
+            turn: this.turn,
+            messages: this.messages
+        }
     }
 
     /**
@@ -83,11 +97,7 @@ class Battle {
      * Envía a los clientes el mensaje de inicio de la batalla.
      */
     startBattle() {
-        this.io.to(this.room).emit('start-battle', {
-            user1: this.user1.data(),
-            user2: this.user2.data(),
-            weather: this.weather
-        });
+        this.io.to(this.room).emit('start-battle', this.data());
     }
 
     async startCounter(player, opponent) {
@@ -133,7 +143,14 @@ class Battle {
         // Si el contador está activo
         if (this.active_timer) {
             // Asigno un tiempo inicial para resumir
-            player.time.startTime = new Date();
+            player.time.start_time = new Date();
+
+            // Le agrego 20 segundos de tiempo
+            player.time.time_left += 20000;
+
+            // El máximo es 120 segundos
+            if (player.time.time_left > 120000)
+                player.time.time_left = 120000;
 
             // Hago un setTimeout, para que, si se termina el tiempo, el jugador pierda la batalla
             player.time.timer = setTimeout(async () => {
@@ -171,35 +188,56 @@ class Battle {
         this.resetBattle();
     }
 
-    selectFirstPokemon(index, player, opponent) {
+    startNewTurn(player, opponent) {
+        // Sumo 1 al turno
+        this.turn++;
+
+        // Ahora deben jugar nuevamente
+        player.has_played = false;
+        opponent.has_played = false;
+
+        // Resumo los contadores de tiempo de ambos clientes
+        this.resumeCounter(player, opponent);
+        this.resumeCounter(opponent, player);
+
+        // Envío mensaje de inicio del turno a los clientes
+        this.io.to(this.room).emit('start-new-turn', this.data());
+    }
+
+    /**
+     * Elegir el primer Pokémon por parte de un usuario.
+     * @param {Number} index Índice del Pokémon en el equipo del jugador. 
+     * @param {Player} player Jugador.
+     * @param {Player} opponent Oponente.
+     */
+    selectPokemon(index, player, opponent) {
         player.play(null);
         player.pauseCounter();
 
         // Asigno el Pokémon activo del jugador
-        player.assignActivePokemon(index);
+        player.assignActivePokemon(index, this.messages);
 
         // Si ya jugaron ambos
         if (player.has_played && opponent.has_played) {
-            // Ahora deben jugar nuevamente
-            player.has_played = false;
-            opponent.has_played = false;
-
             // Envío el estado de la batalla necesaria a los clientes
-            this.io.to(this.room).emit('select-first-pokemon', {
-                user1: this.user1.data(),
-                user2: this.user2.data(),
-                weather: this.weather
-            });
+            this.io.to(this.room).emit('select-pokemon', this.data());
 
-            // Resumo los contadores de tiempo de ambos clientes
-            this.resumeCounter(player, opponent);
-            this.resumeCounter(opponent, player);
+            this.startNewTurn(player, opponent);
         }
     }
 
     whoActsFirst(player, opponent) {
-        const player_priority = player.active_pokemon.moves[player.chosen_action.index].priority;
-        const opponent_priority = opponent.active_pokemon.moves[opponent.chosen_action.index].priority;
+        let player_priority, opponent_priority;
+
+        if (player.chosen_action.type == "move")
+            player_priority = player.active_pokemon.moves[player.chosen_action.index].priority;
+        else if (player.chosen_action.type == "change")
+            player_priority = 6;
+
+        if (opponent.chosen_action.type == "move")
+            opponent_priority = opponent.active_pokemon.moves[opponent.chosen_action.index].priority;
+        else if (opponent.chosen_action.type == "change")
+            opponent_priority = 6;
 
         if (player_priority > opponent_priority)
             return true;
@@ -209,13 +247,14 @@ class Battle {
         // Si las prioridades son igualdes, entonces actúa primero el Pokémon más veloz
         const speed_stat1 = player.active_pokemon.getBattleStat("spe");
         const speed_stat2 = opponent.active_pokemon.getBattleStat("spe");
+
         if (speed_stat1 > speed_stat2)
             return true;
         else if (speed_stat1 < speed_stat2)
             return false;
 
         // Si tienen la misma velocidad, entonces se decide al azar.
-        return (probability(50, 100));
+        return probability(50, 100);
     }
 
     async turnAction(action, player, opponent) {
@@ -224,43 +263,32 @@ class Battle {
 
         // Si jugaron ambos
         if (player.has_played && opponent.has_played) {
-            // Ahora deben jugar nuevamente
-            player.has_played = false;
-            opponent.has_played = false;
-
             // Si la acción del jugador se ejecuta antes que la del oponente
-            if (this.whoActsFirst(player, opponent)) {
-                // Uso la acción del jugador
-                this.useAction(player, opponent, this.messages);
-
-                // Si el Pokémon del oponente está vivo
-                if (opponent.active_pokemon.is_alive) {
-                    // Espero unos segundos
-                    await sleep(2500);
-
-                    // Uso la acción del oponente
-                    this.useAction(opponent, player, this.messages);
-                } else {
-                    console.log("El Pokémon fue debilitado.");
-                }
-            } else {
-                // Uso la acción del jugador
-                this.useAction(opponent, player, this.messages);
-
-                // Si el Pokémon del oponente está vivo
-                if (player.active_pokemon.is_alive) {
-                    // Espero unos segundos
-                    await sleep(2500);
-
-                    // Uso la acción del oponente
-                    this.useAction(player, opponent, this.messages);
-                } else {
-                    console.log("El Pokémon fue debilitado.");
-                }
-            }
-
-            this.finishTurn(player, opponent);
+            if (this.whoActsFirst(player, opponent))
+                this.manageTurn(player, opponent);
+            else
+                this.manageTurn(opponent, player);
         }
+    }
+
+    async manageTurn(player, opponent) {
+        // Uso la acción del jugador
+        this.useAction(player, opponent, this.messages);
+
+        // Si el Pokémon del oponente está vivo
+        if (opponent.active_pokemon.is_alive) {
+            // Espero unos segundos
+            await sleep(2000);
+
+            // Uso la acción del oponente
+            this.useAction(opponent, player, this.messages);
+        }
+
+        // Espero unos segundos
+        await sleep(2000);
+
+        // Termino el turno
+        this.finishTurn(player, opponent);
     }
 
     /**
@@ -290,18 +318,18 @@ class Battle {
             if (boolOneHitKO)
                 return;
 
-            // Si acierta el movimiento, se ejecuta lo demás
-            const boolHasHit = move.hasHit(player.active_pokemon, opponent.active_pokemon, this.messages);
-            if (!boolHasHit)
-                return;
-
-            // Cuántas veces golpea el movimiento
-            const hits = move.howManyHits(player.active_pokemon, this.messages);
-
-            let damage;
             // Segun el tipo de movimiento
             if (move.damage_class == "physical" || move.damage_class == "special") {
-                // Lo hacemos una vez por cada golpe
+                // Si acierta el movimiento, se ejecuta lo demás
+                const boolHasHit = move.hasHit(player.active_pokemon, opponent.active_pokemon, this.messages);
+                if (!boolHasHit)
+                    return;
+
+                // Cuántas veces golpea el movimiento
+                const hits = move.howManyHits(player.active_pokemon, this.messages);
+
+                let damage;
+                // Hago daño, una vez por cada golpe
                 for (let i = 1; i <= hits; i++) {
                     // Calculo el daño
                     damage = this.damageCalculator(
@@ -322,72 +350,87 @@ class Battle {
                     if (!opponent.active_pokemon.is_alive)
                         break;
                 }
+
+                /*******************************
+                CASOS ESPECIALES DE MOVIMIENTOS
+                ********************************/
+                // Movimientos de autodestrucción
+                move.selfDestruct(player.active_pokemon, this.messages);
+
+                // Daño de retroceso
+                move.recoilDamage(player.active_pokemon, damage, this.messages);
+
+                // Absorber daño
+                move.absorbDamage(player.active_pokemon, damage, this.messages);
+
+                // Efectos secundarios
+                move.moveSecondaryEffects(player.active_pokemon, opponent.active_pokemon, this.weather, this.messages);
+
+                // Debe descansar luego de usar el movimiento (ejemplo hiperrayo)
+                move.hasToRest(player.active_pokemon);
+
+                // Movimientos que atrapan al oponente
+                move.trappingMoves(opponent.active_pokemon, this.messages);
             } else if (move.damage_class == "status") {
 
             } else {
                 console.log("error movimiento");
             }
-
-            // CASOS ESPECIALES DE MOVIMIENTOS
-
-            // Movimientos de autodestrucción
-            move.selfDestruct(player.active_pokemon, this.messages);
-
-            // Daño de retroceso
-            move.recoilDamage(player.active_pokemon, damage, this.messages);
-
-            // Absorber daño
-            move.absorbDamage(player.active_pokemon, damage, this.messages);
-
-            // Efectos secundarios
-            move.moveSecondaryEffects(player.active_pokemon, opponent.active_pokemon, this.weather, this.messages);
-
-            // Debe descansar luego de usar el movimiento (ejemplo hiperrayo)
-            move.hasToRest(player.active_pokemon);
-
-            // Movimientos que atrapan al oponente
-            move.trappingMoves(opponent.active_pokemon, this.messages);
+        } else if (player.chosen_action.type == "change") {
+            // Asigno el Pokémon activo del jugador
+            player.assignActivePokemon(player.chosen_action.index, this.messages);
         }
 
         // Verificamos si los Pokémon siguen vivos
         if (!player.active_pokemon.is_alive)
             player.loseOnePokemon();
-        
+
         if (!opponent.active_pokemon.is_alive)
             opponent.loseOnePokemon();
 
         // Envio a los clientes los resultados
-        this.io.to(this.room).emit('action-result', {
-            user1: this.user1.data(),
-            user2: this.user2.data(),
-            weather: this.weather
-        }, this.messages);
+        this.io.to(this.room).emit('action-result', this.data());
 
         // Reinicio el vector de mensajes
         this.messages = [];
     }
 
+    /**
+     * Terminar un turno.
+     * @param {Player} player Jugador.
+     * @param {Player} opponent Oponente. 
+     * @returns 
+     */
     async finishTurn(player, opponent) {
-        this.messages.push("Final del turno.");
-
         // Envío el estado al final del turno al servidor
-        this.io.to(this.room).emit('finished-turn', {
-            user1: this.user1,
-            user2: this.user2,
-            weather: this.weather
-        }, this.messages);
+        this.io.to(this.room).emit('finished-turn', this.data());
 
         // Terminar el combate si a alguno no le quedan Pokémon
         if (player.pokemon_left == 0)
             return await this.finishBattle(opponent, player);
         else if (opponent.pokemon_left == 0)
             return await this.finishBattle(player, opponent);
-        
-        // Reinicio el contador para ambos usuarios
-        this.resumeCounter(player, opponent);
-        this.resumeCounter(opponent, player);
 
-        this.messages = [];
+        // Analizo si algun pokemon esta debilitado
+        this.pokemonKOHandler(player, opponent);
+        this.pokemonKOHandler(opponent, player);
+
+        // Si ambos pokemon estan vivos, arranco un nuevo turno
+        if (player.active_pokemon.is_alive && opponent.active_pokemon.is_alive)
+            this.startNewTurn(player, opponent);
+    }
+
+    /**
+     * Trabaja respecto de la condicion sobre si un Pokémon está debilitado.
+     * @param {Player} player Jugador. 
+     * @param {Opponent} opponent Oponente.
+     */
+    pokemonKOHandler(player, opponent) {
+        if (!player.active_pokemon.is_alive) {
+            player.has_played = false;
+            this.resumeCounter(player, opponent);
+            this.io.to(this.room).emit("pokemon-ko", player.data());
+        }
     }
 
     /**

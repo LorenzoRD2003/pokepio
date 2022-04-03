@@ -277,9 +277,9 @@ class Move {
             case "sludge":
             case "sludge-bomb":
             case "poison-tail":
-                opponent.poison(messages); break;
+                opponent.poison(messages, false); break;
             case "poison-fang":
-                opponent.badlyPoison(messages); break;
+                opponent.poison(messages, true); break;
             case "stomp":
             case "rolling-kick":
             case "headbutt":

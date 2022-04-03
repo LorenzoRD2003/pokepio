@@ -95,7 +95,7 @@ io.on('connection', client => {
     client.on('start-counter', () => battle.startCounter(player, opponent));
 
     // Cuando un jugador selecciona el primer Pokemon, pasa un indice
-    client.on('select-first-pokemon', index => battle.selectFirstPokemon(index, player, opponent));
+    client.on('select-pokemon', index => battle.selectPokemon(index, player, opponent));
 
     // Cuando un jugador realiza una acción en un turno
     client.on('select-turn-action', async action => await battle.turnAction(action, player, opponent));

@@ -3,7 +3,8 @@
  * @param {String} text Mensaje a añadir. 
  */
 const addMessageToServerMessages = text => {
-    document.getElementById("serverMessages").innerHTML += `<h6>${text}</h6>`;
+    const serverMessages = document.getElementById("serverMessages");
+    serverMessages.innerHTML += `<h6>${text}</h6>`;
 }
 
 const setPlayerOpponent = battle => {
@@ -52,7 +53,7 @@ const updateBattleDOM = (player, opponent) => {
 
     // Estado del Pokémon
     document.getElementById("pokemon1Status").innerText = `Estado: ${status}`;
-    
+
     // Tipos del pokemon
     document.getElementById("pokemon1Types").innerText = "Tipos: ";
     types.forEach(type => document.getElementById("pokemon1Types").innerText += `${capitalizeFirstLetter(type.name)} `);
@@ -64,22 +65,22 @@ const updateBattleDOM = (player, opponent) => {
         move1.innerText = `${capitalizeFirstLetter(moves[0].name)} PP: ${moves[0].pp}`;
     } else
         move1.hidden = true;
-    
+
     const move2 = document.getElementById("move2");
     if (moves[1]) {
         move2.hidden = false;
         move2.innerText = `${capitalizeFirstLetter(moves[1].name)} PP: ${moves[1].pp}`;
     } else
         move2.hidden = true;
-    
+
     const move3 = document.getElementById("move3");
     if (moves[2]) {
         move3.hidden = false;
         move3.innerText = `${capitalizeFirstLetter(moves[2].name)} PP: ${moves[2].pp}`;
     } else
         move3.hidden = true;
-    
-        const move4 = document.getElementById("move4");
+
+    const move4 = document.getElementById("move4");
     if (moves[3]) {
         move4.hidden = false;
         move4.innerText = `${capitalizeFirstLetter(moves[3].name)} PP: ${moves[3].pp}`;
@@ -89,7 +90,7 @@ const updateBattleDOM = (player, opponent) => {
     // Guardo los datos del oponente
     document.getElementById("pokemon2Name").innerText = capitalizeFirstLetter(opponent.active_pokemon.name);
     document.getElementById("pokemon2Image").srcset = opponent.active_pokemon.sprite;
-    document.getElementById("pokemon2Level").innerText = opponent.active_pokemon.level;
+    document.getElementById("pokemon2Level").innerText = `Nivel: ${opponent.active_pokemon.level}`;
     document.getElementById("pokemon2HP").innerText = `PV: ${opponent.active_pokemon.stats.hp.current_hp}`;
     document.getElementById("pokemon2Status").innerText = `Estado: ${opponent.active_pokemon.status}`;
     document.getElementById("pokemon2Types").innerText = "Tipos: ";
@@ -152,14 +153,14 @@ socket.on('start-battle', battle => {
     pokemonBattleTheme.loop = true;
 });
 
-socket.on('select-first-pokemon', battle => {
-    // Actualizo el DOM
+socket.on('select-pokemon', battle => {
     const { player, opponent } = setPlayerOpponent(battle);
+
+    // Actualizo el DOM
     updateBattleDOM(player, opponent);
 
     // Muestro mensajes del servidor
-    addMessageToServerMessages(`${player.username} elige a ${capitalizeFirstLetter(player.active_pokemon.name)}.`);
-    addMessageToServerMessages(`${opponent.username} elige a ${capitalizeFirstLetter(opponent.active_pokemon.name)}.`);
+    battle.messages.forEach(addMessageToServerMessages);
 
     // Muestro los divs de la batalla y escondo los previos
     document.getElementById("beforeBattleShowUser1").hidden = true;
@@ -168,31 +169,67 @@ socket.on('select-first-pokemon', battle => {
     document.getElementById("inBattleShowUser2").hidden = false;
 });
 
-socket.on('action-result', (battle, messages) => {
+socket.on('action-result', battle => {
     // Actualizo el DOM
     const { player, opponent } = setPlayerOpponent(battle);
     updateBattleDOM(player, opponent);
 
     // Muestro la lista de mensajes
-    messages.forEach(addMessageToServerMessages);
+    battle.messages.forEach(addMessageToServerMessages);
 });
 
-socket.on("finished-turn", (battle, messages) => {
+socket.on('start-new-turn', battle => {
+    const { player, opponent } = setPlayerOpponent(battle);
+
+    // Escribo el número de turno
+    document.getElementById("turnNumber").innerHTML = `Turno ${battle.turn}`;
+
+    // Activo los botones de movimientos
+    btnMove.forEach(btn => btn.disabled = false);
+
+    // Activo los botones de cambios de Pokémon
+    btnChange.forEach(btn => {
+        btn.hidden = false;
+
+        // Solo activo los que estan vivos, y tampoco activo el que estoy usando
+        pokemon = player.battle_team[btn.dataset.index];
+
+        if (player.active_pokemon_index != btn.dataset.index && pokemon.is_alive)
+            btn.disabled = false;
+    });
+});
+
+socket.on("finished-turn", battle => {
     // Actualizo el DOM
     const { player, opponent } = setPlayerOpponent(battle);
     updateBattleDOM(player, opponent);
 
     // Muestro la lista de mensajes
-    messages.forEach(addMessageToServerMessages);
+    battle.messages.forEach(addMessageToServerMessages);
+    addMessageToServerMessages("");
+});
 
-    // Activo los botones de cambios de Pokémon (excepto el que ya estoy usando)
-    btnChange.forEach(btn => {
-        if (player.active_pokemon_index !== btn.dataset.index)
+socket.on("pokemon-ko", player => {
+    const username = document.getElementById("username").innerText;
+    
+    if (username != player.username)
+        return addMessageToServerMessages("Esperando al oponente...");
+    
+    // Si este cliente es el que tiene un Pokémon debilitado, entonces lo marcamos
+    addMessageToServerMessages("Elija un nuevo Pokémon.");
+
+    // Muestro el div de elegir Pokémon
+    document.getElementById("beforeBattleShowUser1").hidden = false;
+    document.getElementById("inBattleShowUser1").hidden = true;
+
+    // Activo los botones de cambios de Pokémon
+    btnSelectPokemonAtStart.forEach(btn => {
+        pokemon = player.battle_team[btn.dataset.index];
+
+        // Solo activo los que estan vivos, y tampoco activo el que estoy usando
+        if (player.active_pokemon_index != btn.dataset.index && pokemon.is_alive)
             btn.disabled = false;
     });
-
-    // Activo los botones de movimientos del Pokémon
-    btnMove.forEach(btn => btn.disabled = false);
 });
 
 socket.on('battle-end', battleResult => {
@@ -216,7 +253,7 @@ socket.on('started-timeout', () => {
 });
 
 // Resumir contador
-socket.on('resumed-timeout', (user, time) => addMessageToServerMessages(`A ${user} le quedan ${Math.round(time/1000)} segundos.`));
+socket.on('resumed-timeout', (user, time) => addMessageToServerMessages(`A ${user} le quedan ${Math.round(time / 1000)} segundos.`));
 
 // Cuando se le acaba el tiempo a un usuario (poco después, llega el evento de fin de la batalla)
 socket.on('finished-timeout', username => addMessageToServerMessages(`Se acabó el tiempo de ${username}.`));
@@ -246,10 +283,9 @@ btnSelectPokemonAtStart.forEach(btn => {
         btnSelectPokemonAtStart.forEach(btnDisable => btnDisable.disabled = true);
 
         // Envío mi elección al servidor
-        socket.emit("select-first-pokemon", index);
+        socket.emit("select-pokemon", index);
     });
 });
-
 
 // Botones de movimientos
 const btnMove = document.querySelectorAll(".btn-move");
@@ -261,17 +297,18 @@ btnMove.forEach(btn => {
 
         // Obtengo el movimiento seleccionado
         const moveIndex = parseInt(btn.dataset.index);
-        
+
         // Lo envío al servidor
         socket.emit("select-turn-action", {
             type: "move",
             index: moveIndex
         });
 
-        // Vacío lista de mensajes
+        // Borro la lista de mensajes del servidor
         document.getElementById("serverMessages").innerHTML = "";
+        addMessageToServerMessages("Esperando al oponente...");
     });
-})
+});
 
 const btnChange = document.querySelectorAll(".btn-change");
 btnChange.forEach(btn => {
@@ -284,9 +321,16 @@ btnChange.forEach(btn => {
         btnChange.forEach(btnDisable => btnDisable.disabled = true);
 
         // Envío la información al servidor
-        // socket.emit("select-turn-action", index);
+        socket.emit("select-turn-action", {
+            type: "change",
+            index: index
+        });
+
+        // Borro la lista de mensajes del servidor
+        document.getElementById("serverMessages").innerHTML = "";
+        addMessageToServerMessages("Esperando al oponente...");
     });
-})
+});
 
 // Botón de rendirse
 const surrenderButton = document.getElementById("surrenderButton");

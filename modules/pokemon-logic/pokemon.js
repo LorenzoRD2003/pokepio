@@ -250,7 +250,7 @@ class Pokemon {
      */
     selfDestruct() {
         this.stats.hp.current_hp = 0;
-        this.isAlive = false;
+        this.is_alive = false;
         messages.push(`¡${capitalize(this.name)} se auto-destruyó y fue debilitado!`);
     }
 
@@ -324,7 +324,12 @@ class Pokemon {
             return;
 
         // Si tiene velo sagrado
-        if (this.other_status.safeguard) return;
+        if (this.other_status.safeguard)
+            return;
+
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
 
         // Quemamos al Pokémon
         this.status = "burned";
@@ -353,6 +358,10 @@ class Pokemon {
         if (this.other_status.safeguard)
             return;
 
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
         // Congelamos al Pokémon
         this.status = "frozen";
         messages.push(`¡${capitalize(this.name)} fue congelado!`);
@@ -372,7 +381,12 @@ class Pokemon {
             return;
 
         // Si tiene velo sagrado
-        if (this.other_status.safeguard) return;
+        if (this.other_status.safeguard)
+            return;
+
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
 
         // Se paraliza al Pokémon
         this.status = "paralyzed";
@@ -382,8 +396,9 @@ class Pokemon {
     /**
      * Le otorga el estado Poisoned de ser posible.
      * @param {Array} messages Vector de mensajes.
+     * @param {Boolean} is_badly Booleano que hace referencia a si está gravemente envenenado o no
      */
-    poison(messages) {
+    poison(messages, is_badly) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -400,35 +415,18 @@ class Pokemon {
         if (this.other_status.safeguard)
             return;
 
-        // Se envenena al Pokémon
-        this.status = "poisoned";
-        messages.push(`¡${capitalize(this.name)} fue envenenado!`);
-    }
-
-    /**
-     * Le otorga el estado Badly Poisoned de ser posible.
-     * @param {Array} messages Vector de mensajes.
-     */
-    badlyPoison(messages) {
-        // Si ya tiene un estado alterado
-        if (this.status != "OK")
-            return;
-
-        // Si es de tipo veneno
-        if (this.includes("poison"))
-            return;
-
-        // Si es de tipo acero
-        if (this.types.includes("steel"))
-            return;
-
-        // Si tiene velo sagrado
-        if (this.other_status.safeguard)
+        // Si está debilitado
+        if (!this.is_alive)
             return;
 
         // Se envenena al Pokémon
-        this.status = "badly-poisoned";
-        messages.push(`¡${capitalize(this.name)} fue gravemente envenenado!`);
+        if (is_badly) {
+            this.status = "badly-poisoned";
+            messages.push(`¡${capitalize(this.name)} fue gravemente envenenado!`);
+        } else {
+            this.status = "poisoned";
+            messages.push(`¡${capitalize(this.name)} fue envenenado!`);
+        }
     }
 
     /**
@@ -436,6 +434,10 @@ class Pokemon {
      * @param {Array} messages Vector de mensajes.
      */
     flinch(messages) {
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
         this.other_status.flinched = true;
         messages.push(`¡${capitalize(this.name)} retrocedió!`);
     }
@@ -445,6 +447,10 @@ class Pokemon {
      * @param {Array} messages Vector de mensajes.
      */
     confuse(messages) {
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
         // Si tiene velo sagrado
         if (this.other_status.safeguard)
             return;
@@ -454,6 +460,10 @@ class Pokemon {
     }
 
     activateHasToRest() {
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
         // Actualizamos el estado de que debe descansar
         this.other_status.has_to_rest = true;
 
@@ -477,6 +487,10 @@ class Pokemon {
     }
 
     getTrapped(messages) {
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
         // Elijo aleatoriamente la cantidad de turnos que va a estar atrapado
         const howManyTurns = mathFunctions.chooseRandom(2, 2, 2, 3, 3, 3, 4, 5);
         this.other_status.bounded = howManyTurns;
