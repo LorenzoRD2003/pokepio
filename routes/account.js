@@ -36,38 +36,25 @@ router.post("/login", async (req, res, next) => {
                 if (!user)
                     return next(ApiError.internalServerError("Ha ocurrido un error con el usuario obtenido."));
 
-                // Guardamos datos en las variables de sesión
-                req.session.user = user;
-                const ID_User = req.session.user.ID_User;
-
-                if (!ID_User)
-                    return next(ApiError.internalServerError("Error de sesión."));
-
                 // Checkeamos que el usuario esté online
-                const alreadyOnline = await databaseFunctions.checkUserOnline(ID_User);
-                
-                if (alreadyOnline) {
-                    req.mustLogin = true;
-                    req.session.destroy();
+                const alreadyOnline = await databaseFunctions.checkUserOnline(user.ID_User);
+                if (alreadyOnline)
                     return next(ApiError.badRequestError("Su usuario ya inició sesión."));
-                }
                 
                 // Actualizamos que el usuario está ONLINE
-                await databaseFunctions.setUserOnline(ID_User)
+                await databaseFunctions.setUserOnline(user.ID_User)
 
-                // Obtenemos los equipos del usuario
-                req.session.teams = await databaseFunctions.selectAllTeamsByUser(ID_User);
+                // Guardamos datos en las variables de sesión
+                req.session.user = user;
+                req.session.teams = await databaseFunctions.selectAllTeamsByUser(user.ID_User);
 
                 // Redirigimos a /home
                 return res.redirect('/home');
             case "wrong-password":
-                req.mustLogin = true;
                 return next(ApiError.badRequestError("La contraseña es incorrecta."));
             case "non-existent-email":
-                req.mustLogin = true;
                 return next(ApiError.badRequestError("El email no está registrado."));
             case "non-existent-username":
-                req.mustLogin = true;
                 return next(ApiError.badRequestError("El nombre de usuario no está registrado."));
         }
     } catch (err) {

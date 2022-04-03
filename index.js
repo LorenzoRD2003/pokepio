@@ -10,9 +10,6 @@ const credentials = require("./modules/credentials");
 const { ApiError, api404Handler, apiErrorHandler } = require('./modules/error-handler.js');
 const session = require('express-session');
 const { Battle } = require("./modules/pokemon-logic/battle.js");
-const { Player } = require("./modules/pokemon-logic/player.js");
-const { Pokemon } = require("./modules/pokemon-logic/pokemon.js");
-const { Move } = require("./modules/pokemon-logic/move.js");
 
 const app = express();
 app.use(express.static('public'));
@@ -71,7 +68,10 @@ io.on('connection', client => {
     client.on('join-battle', async user => {
         battle = allBattles.find(battle => battle.isAvailable(user.username));
 
-        const number = battle.addUser(user);
+        const number = await battle.addUser(user);
+
+        // El cliente se une a la sala de la batalla
+        client.join(battle.room);
 
         // player es el cliente que esta enviando datos, opponent es el otro cliente de la sala
         if (number == 1)
@@ -79,13 +79,10 @@ io.on('connection', client => {
         else if (number == 2) {
             player = battle.user2;
             opponent = battle.user1;
-        }
 
-        // El cliente se une a la sala de la batalla
-        client.join(battle.room);
-        
-        // Envío a los clientes el inicio de la batalla
-        battle.startBattle();
+            // Envío a los clientes el inicio de la batalla
+            battle.startBattle();
+        }
     });
 
     // El primer cliente necesita que asigne como oponente al segundo cliente

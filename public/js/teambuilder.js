@@ -405,7 +405,7 @@ const addPokemonToTeam = async (addPokemonToTeamButton, pokemon) => {
         types: pokemon.types.map(type => type.name),
         level: parseInt(getValueByID("pokemonLevel")),
         happiness: parseInt(getValueByID("happiness")),
-        ability: getValueByID("pokemonAbilitiesList"),
+        ability: getValueByID("pokemonAbilitiesList").toLowerCase(),
         moves: [
             parseInt(getValueByID("movesList1")),
             parseInt(getValueByID("movesList2")),

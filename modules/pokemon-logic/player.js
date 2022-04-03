@@ -1,9 +1,15 @@
+
+const { Pokemon } = require("./pokemon.js");
+const { allMoves, allTypes, naturesList } = require("../dataArrays");
+const fetchFunctions = require('../fetchFunctions');
+
 /**
  * Clase para un jugador.
  */
 class Player {
     /**
      * Crea un objeto Player.
+     * @param {Battle} battle Referencia a la batalla
      * @param {Number} id ID del usuario.
      * @param {String} username Nombre de usuario.
      * @param {String} profile_photo Foto de perfil del usuario.
@@ -13,8 +19,35 @@ class Player {
         this.id = id;
         this.username = username;
         this.profile_photo = profile_photo;
-        this.battle_team = battle_team; // Pokemon array
+        this.battle_team = battle_team.map(pokemon => {
+            const pokemon_types = pokemon.types.map(poketype => allTypes.find(type => poketype == type.name));
+
+            const pokemon_nature = naturesList.find(nature => nature.name == pokemon.nature);
+            const base_stats = fetchFunctions.getPokemonBaseStats(pokemon.name);
+
+            const move1 = allMoves.find(move => move.id == pokemon.moves[0]);
+            const move2 = allMoves.find(move => move.id == pokemon.moves[1]);
+            const move3 = allMoves.find(move => move.id == pokemon.moves[2]);
+            const move4 = allMoves.find(move => move.id == pokemon.moves[3]);
+
+            return new Pokemon(
+                pokemon.name,
+                pokemon_types,
+                pokemon.level,
+                pokemon.happiness,
+                pokemon.ability,
+                pokemon.item,
+                pokemon_nature,
+                [move1, move2, move3, move4],
+                pokemon.sprite,
+                base_stats,
+                pokemon.ev,
+                pokemon.iv
+            );
+        });
+        this.pokemon_left = this.battle_team.length;
         this.active_pokemon = null; // Pokemon
+        this.active_pokemon_index = null;
         this.has_played = false;
         this.chosen_action = null;
         this.time = {
@@ -25,6 +58,18 @@ class Player {
         };
     }
 
+    /**
+     * Devuelve el Player como un objeto con los datos suficientes para el cliente.
+     */
+    data() {
+        return {
+            username: this.username,
+            profile_photo: this.profile_photo,
+            battle_team: this.battle_team,
+            active_pokemon: this.active_pokemon
+        }
+    }
+
     play(action) {
         this.has_played = true;
         this.chosen_action = action;
@@ -32,6 +77,7 @@ class Player {
 
     assignActivePokemon(index) {
         this.active_pokemon = this.battle_team[index];
+        this.active_pokemon_index = index;
     }
 
     pauseCounter() {
@@ -46,6 +92,11 @@ class Player {
             // Limpio el contador
             clearTimeout(this.time.timer);
         }
+    }
+
+    loseOnePokemon() {
+        if (this.pokemon_left)
+            this.pokemon_left--;
     }
 }
 

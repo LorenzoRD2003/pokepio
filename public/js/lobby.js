@@ -73,8 +73,6 @@ createChatButton.addEventListener("click", async () => {
             }
         })).data;
 
-        console.log(res);
-
         // Vacío la lista de mensajes
         const messagesDiv = document.getElementById("messagesDiv");
         messagesDiv.innerHTML = "";

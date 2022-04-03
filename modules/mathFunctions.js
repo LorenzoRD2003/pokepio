@@ -17,7 +17,7 @@ exports.sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
  * @param {Number} min Valor mínimo.
  * @returns Valor aleatorio.
  */
-const randomNumberInInterval = (max, min) => Math.floor(Math.random() * (max - min + 1) + min);
+exports.randomNumberInInterval = (max, min) => Math.floor(Math.random() * (max - min + 1) + min);
 
 /**
  * Dado un valor de probabilidad sobre otro valor, devuelve si se cumplió la probabilidad.

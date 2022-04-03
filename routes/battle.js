@@ -6,15 +6,18 @@ const router = new express.Router();
 
 router.get('/', (req, res, next) => {
     try {
-        const battleTeam = req.session.battleTeam;
-        if (!battleTeam)
+        if (!req.session.user)
+            return next(ApiError.internalServerError("Error de sesión."));;
+
+        const battle_team = req.session.battle_team;
+        if (!battle_team)
             return next(ApiError.badRequestError("Debe tener seleccionado un equipo de batalla para poder entrar a esta página."));
 
         res.render('battle', {
             username: req.session.user.username,
             profile_photo: req.session.user.profile_photo,
-            battleTeam: battleTeam,
-            pokemonLeft: battleTeam.length
+            battle_team: battle_team,
+            pokemonLeft: battle_team.length
         });
     } catch (err) {
         return next(ApiError.internalServerError(err.message));
@@ -23,15 +26,18 @@ router.get('/', (req, res, next) => {
 
 router.get('/team', async (req, res, next) => {
     try {
-        if (!req.session.user || !req.session.battleTeam)
+        if (!req.session.user || !req.session.battle_team)
             next(ApiError.internalServerError("Error de sesión."));
 
-        res.status(200).send(new Player(
-            req.session.user.ID_User,
-            req.session.user.username,
-            req.session.user.profile_photo,
-            req.session.battle_team
-        ));
+        const { ID_User, username, profile_photo } = req.session.user;
+        const battle_team = req.session.battle_team;
+
+        res.status(200).send({
+            id: ID_User,
+            username: username,
+            profile_photo: profile_photo,
+            battle_team: battle_team
+        });
     } catch (err) {
         next(ApiError.internalServerError(err.message));
     }

@@ -48,6 +48,9 @@ class ApiError {
 exports.ApiError = ApiError;
 
 const apiErrorHandler = (err, req, res, next) => {
+    
+    console.log(err);
+
     // Si es un error de la clase que creamos
     if (err instanceof ApiError) {
         if (req.xhr)

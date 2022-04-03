@@ -1,4 +1,5 @@
 const { capitalize } = require("../mathFunctions.js");
+const { Move } = require("./move.js");
 
 /**
  * Clase para un objeto Pokémon.
@@ -27,7 +28,7 @@ class Pokemon {
         this.ability = ability;
         this.item = item;
         this.nature = nature;
-        this.moves = moves;
+        this.moves = moves.map(move => new Move(move.name, move.power, move.type, move.pp, move.accuracy, move.priority, move.damage_class, move.effect_chance, move.meta.crit_rate));
         this.sprite = sprite;
         this.base_stats = base_stats;
         this.ev = ev;
@@ -182,7 +183,7 @@ class Pokemon {
     }
 
     getStatMultiplier(stat_name) {
-        const stat = getStat(stat_name);
+        const stat = this.getStat(stat_name);
 
         if (stat_name == "acc" || stat_name == "eva")
             return Math.max(3, 3 + stat.stage) / Math.max(3, 3 - stat.stage);
@@ -196,112 +197,103 @@ class Pokemon {
      * @returns El número que se usa a la hora de calcular con el stat.
      */
     getBattleStat(stat_name) {
-        const stat = this.getStat(stat_name);
-        const multiplier = this.getStatMultiplier(stat);
-        return stat.base_stat * multiplier;
-    }
-
-    /**
-     * Devuelve el multiplicador de daño si el Pokémon está quemado o no.
-     * @param {Move} move Movimiento a verificar.
-     * @returns 0.5 si está quemado y es un movimiento fisico, 1 de otro modo.
-     */
-    isBurnedMultiplier(move) {
-        return (this.status == "burned" && move.damage_class == "physical") ? 0.5 : 1;
+        const base_stat = this.getStat(stat_name).base_stat;
+        const multiplier = this.getStatMultiplier(stat_name);
+        return base_stat * multiplier;
     }
 
     /**
      * Reduce la vida del Pokémon.
      * @param {Number} damage Daño recibido.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    reduceHP(damage, turn_messages) {
+    reduceHP(damage, messages) {
         // Restamos vida del Pokémon
         this.stats.hp.current_hp -= damage;
-        turn_messages.push(`${capitalize(this.name)} recibió ${damage} puntos de daño.`);
+        messages.push(`${capitalize(this.name)} recibió ${damage} puntos de daño.`);
 
         // Si no le queda vida
         if (this.stats.hp.current_hp <= 0)
-            this.die(turn_messages);
+            this.die(messages);
     }
 
-    die(turn_messages) {
+    die(messages) {
         // Dejamos la vida en cero
         this.stats.hp.current_hp = 0;
 
         // Informamos que el Pokémon fue debilitado
         this.is_alive = false;
-        turn_messages.push(`¡${capitalize(this.name)} fue debilitado!`);
+        messages.push(`¡${capitalize(this.name)} fue debilitado!`);
     }
 
     /**
      * Recupera la vida del Pokémon.
      * @param {Number} hp Vida a recuperar. 
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    restoreHP(hp, turn_messages) {
+    restoreHP(hp, messages) {
         // Sumamos la vida al parámetro del Pokémon
         this.stats.hp.current_hp += hp;
 
         // Si tiene más vida que la máxima, entonces la dejamos en la máxima
         if (this.stats.hp.current_hp >= this.stats.hp.max_hp) {
             this.stats.hp.current_hp = this.stats.hp.max_hp;
-            turn_messages.push(`¡Ahora la vida de ${capitalize(this.name)} está al máximo!`);
+            messages.push(`¡Ahora la vida de ${capitalize(this.name)} está al máximo!`);
         } else {
-            turn_messages.push(`${capitalize(this.name)} recuperó ${hp} puntos de vida.`);
+            messages.push(`${capitalize(this.name)} recuperó ${hp} puntos de vida.`);
         }
     }
 
     /**
      * Se autodestruye este Pokemon.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
     selfDestruct() {
         this.stats.hp.current_hp = 0;
         this.isAlive = false;
-        turn_messages.push(`¡${capitalize(this.name)} se auto-destruyó y fue debilitado!`);
+        messages.push(`¡${capitalize(this.name)} se auto-destruyó y fue debilitado!`);
     }
 
     /**
      * Trabaja con la modificación de los stats por niveles.
      * @param {String} stat_name Nombre del stat a modificar.
      * @param {Number} stages Cantidad de niveles a subir(+) o bajar (-).
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    changeStatStage(stat_name, stages, turn_messages) {
+    changeStatStage(stat_name, stages, messages) {
         let stat = this.getStat(stat_name);
 
         // Si un stat está al máximo, no se puede incrementar.
         if (stat.stage == 6 && stages > 0) {
-            turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} no puede subir más!`);
+            messages.push(`¡${stat.name} de ${capitalize(this.name)} no puede subir más!`);
             return;
         }
 
         // Si un stat está al mínimo, no se puede bajar.
         if (stat.stage == -6 && stages < 0) {
-            turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} no puede bajar más!`);
+            messages.push(`¡${stat.name} de ${capitalize(this.name)} no puede bajar más!`);
             return;
         }
 
         // Un mensaje distinto según la cantidad de niveles.
         switch (stages) {
             case 3:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} subió muchísimo!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} subió muchísimo!`);
                 break;
             case 2:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} subió mucho!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} subió mucho!`);
                 break;
             case 1:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} subió!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} subió!`);
                 break;
             case -1:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó!`);
                 break;
             case -2:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó mucho!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó mucho!`);
                 break;
             case -3:
-                turn_messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó muchísimo!`);
+                messages.push(`¡${stat.name} de ${capitalize(this.name)} bajó muchísimo!`);
                 break;
             default:
                 console.log("error stat stage change");
@@ -320,9 +312,9 @@ class Pokemon {
 
     /**
      * Se le otorga el estado Burned de ser posible.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    burn(turn_messages) {
+    burn(messages) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -336,15 +328,15 @@ class Pokemon {
 
         // Quemamos al Pokémon
         this.status = "burned";
-        turn_messages.push(`¡${capitalize(this.name)} fue quemado!`);
+        messages.push(`¡${capitalize(this.name)} fue quemado!`);
     }
 
     /**
      * Se le otorga el estado Frozen de ser posible.
      * @param {String} weather Clima de la batalla.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    freeze(weather, turn_messages) {
+    freeze(weather, messages) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -363,14 +355,14 @@ class Pokemon {
 
         // Congelamos al Pokémon
         this.status = "frozen";
-        turn_messages.push(`¡${capitalize(this.name)} fue congelado!`);
+        messages.push(`¡${capitalize(this.name)} fue congelado!`);
     }
 
     /**
      * Se le otorga el estado Paralyzed de ser posible.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    paralyze(turn_messages) {
+    paralyze(messages) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -384,14 +376,14 @@ class Pokemon {
 
         // Se paraliza al Pokémon
         this.status = "paralyzed";
-        turn_messages.push(`¡${capitalize(this.name)} fue paralizado!`);
+        messages.push(`¡${capitalize(this.name)} fue paralizado!`);
     }
 
     /**
      * Le otorga el estado Poisoned de ser posible.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    poison(turn_messages) {
+    poison(messages) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -410,14 +402,14 @@ class Pokemon {
 
         // Se envenena al Pokémon
         this.status = "poisoned";
-        turn_messages.push(`¡${capitalize(this.name)} fue envenenado!`);
+        messages.push(`¡${capitalize(this.name)} fue envenenado!`);
     }
 
     /**
      * Le otorga el estado Badly Poisoned de ser posible.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    badlyPoison(turn_messages) {
+    badlyPoison(messages) {
         // Si ya tiene un estado alterado
         if (this.status != "OK")
             return;
@@ -436,32 +428,32 @@ class Pokemon {
 
         // Se envenena al Pokémon
         this.status = "badly-poisoned";
-        turn_messages.push(`¡${capitalize(this.name)} fue gravemente envenenado!`);
+        messages.push(`¡${capitalize(this.name)} fue gravemente envenenado!`);
     }
 
     /**
      * El Pokémon retrocede.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    flinch(turn_messages) {
+    flinch(messages) {
         this.other_status.flinched = true;
-        turn_messages.push(`¡${capitalize(this.name)} retrocedió!`);
+        messages.push(`¡${capitalize(this.name)} retrocedió!`);
     }
 
     /**
      * El Pokémon se confunde.
-     * @param {Array} turn_messages Vector de mensajes.
+     * @param {Array} messages Vector de mensajes.
      */
-    confuse(turn_messages) {
+    confuse(messages) {
         // Si tiene velo sagrado
         if (this.other_status.safeguard)
             return;
 
         this.other_status.confused = true;
-        turn_messages.push(`¡${capitalize(this.name)} está confuso!`);
+        messages.push(`¡${capitalize(this.name)} está confuso!`);
     }
 
-    activatehasToRest() {
+    activateHasToRest() {
         // Actualizamos el estado de que debe descansar
         this.other_status.has_to_rest = true;
 
@@ -469,30 +461,31 @@ class Pokemon {
         this.can_change = false;
     }
 
-    chargeTurn(turn_messages) {
+    chargeTurn(messages) {
         // Ahora el movimiento está cargado
         this.other_status.charging_turn = true;
 
         // El Pokémon no puede ser cambiado
         this.can_change = false;
-        turn_messages.push(`${capitalize(this.name)} está cargando su movimiento.`);
+        messages.push(`${capitalize(this.name)} está cargando su movimiento.`);
     }
 
-    liberateMovement(turn_messages) {
+    liberateMovement(messages) {
         // Ya no está cargado
         this.charging_turn = false;
-        turn_messages.push(`${capitalize(this.name)} libera su movimiento.`);
+        messages.push(`${capitalize(this.name)} libera su movimiento.`);
     }
 
-    getTrapped(turn_messages) {
+    getTrapped(messages) {
         // Elijo aleatoriamente la cantidad de turnos que va a estar atrapado
         const howManyTurns = mathFunctions.chooseRandom(2, 2, 2, 3, 3, 3, 4, 5);
         this.other_status.bounded = howManyTurns;
 
         // Ahora, el Pokémon no puede cambiar
         this.can_change = false;
-        turn_messages.push(`¡${capitalize(this.name)} fue atrapado por el ataque de su oponente!`);
+        messages.push(`¡${capitalize(this.name)} fue atrapado por el ataque de su oponente!`);
     }
 }
+
 
 module.exports = { Pokemon };
