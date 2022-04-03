@@ -1,0 +1,5 @@
+node_modules/
+modules/credentials.js
+/public/audio
+/public/img
+*.bat
