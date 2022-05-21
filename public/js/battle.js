@@ -246,6 +246,20 @@ socket.on('battle-end', battleResult => {
     );
 });
 
+socket.on('error', () => {
+    // Desactivo el botón de rendirse
+    document.getElementById("surrenderButton").disabled = true;
+
+    // Modal para volver al lobby
+    createModal(
+        "finishedBattleModal",
+        "Final de la batalla",
+        `Ocurrió un error inesperado. Haga click en el botón para volver al lobby.`,
+        "Aceptar",
+        () => document.getElementById("returnToLobbyForm").submit()
+    );
+});
+
 // Iniciar el contador
 socket.on('started-timeout', () => {
     document.getElementById("timeButton").disabled = true;

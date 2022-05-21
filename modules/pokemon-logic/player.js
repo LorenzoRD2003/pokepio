@@ -87,7 +87,7 @@ class Player {
         this.active_pokemon_index = index;
         messages.push(`${this.username} elige a ${capitalize(this.active_pokemon.name)}.`);
     }
-
+    
     pauseCounter() {
         // Si en algún momento se inició su contador
         if (this.time.start_time) {

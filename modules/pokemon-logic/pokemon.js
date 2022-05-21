@@ -1,4 +1,4 @@
-const { capitalize } = require("../mathFunctions.js");
+const { capitalize, probability } = require("../mathFunctions.js");
 const { Move } = require("./move.js");
 
 /**
@@ -78,6 +78,8 @@ class Pokemon {
         this.crit_rate = 0; // Ratio de crítico
         this.is_alive = true; // Si está vivo
         this.status = "OK"; // Estado del Pokémon
+        this.turns_poisoned = 0;
+        this.turns_asleep = 0;
         this.other_status = {
             confused: false,
             flinched: false,
@@ -111,6 +113,11 @@ class Pokemon {
             safeguard: false
         };
         this.can_change = true; // Si puede cambiar de Pokémon.
+        this.can_attack = false;
+    }
+
+    getMoveByIndex(index) {
+        return this.moves[index];
     }
 
     /**
@@ -404,7 +411,7 @@ class Pokemon {
             return;
 
         // Si es de tipo veneno
-        if (this.includes("poison"))
+        if (this.types.includes("poison"))
             return;
 
         // Si es de tipo acero
@@ -427,6 +434,25 @@ class Pokemon {
             this.status = "poisoned";
             messages.push(`¡${capitalize(this.name)} fue envenenado!`);
         }
+        this.turns_poisoned = 0;
+    }
+
+    sleep(messages) {
+        // Si ya tiene un estado alterado
+        if (this.status != "OK")
+            return;
+
+        // Si tiene velo sagrado
+        if (this.other_status.safeguard)
+            return;
+
+        // Si está debilitado
+        if (!this.is_alive)
+            return;
+
+        // Se duerme al Pokémon
+        this.status = "asleep";
+        messages.push(`¡${capitalize(this.name)} fue dormido!`);
     }
 
     /**
@@ -459,24 +485,9 @@ class Pokemon {
         messages.push(`¡${capitalize(this.name)} está confuso!`);
     }
 
-    activateHasToRest() {
-        // Si está debilitado
-        if (!this.is_alive)
-            return;
-
-        // Actualizamos el estado de que debe descansar
-        this.other_status.has_to_rest = true;
-
-        // Impedimos que pueda cambiar
-        this.can_change = false;
-    }
-
     chargeTurn(messages) {
         // Ahora el movimiento está cargado
         this.other_status.charging_turn = true;
-
-        // El Pokémon no puede ser cambiado
-        this.can_change = false;
         messages.push(`${capitalize(this.name)} está cargando su movimiento.`);
     }
 
@@ -495,9 +506,103 @@ class Pokemon {
         const howManyTurns = mathFunctions.chooseRandom(2, 2, 2, 3, 3, 3, 4, 5);
         this.other_status.bounded = howManyTurns;
 
-        // Ahora, el Pokémon no puede cambiar
-        this.can_change = false;
         messages.push(`¡${capitalize(this.name)} fue atrapado por el ataque de su oponente!`);
+    }
+
+    recoverHP(percentage, messages) {
+        this.stats.hp.current_hp += Math.floor(this.stats.hp.max_hp * percentage / 100);
+        if (this.stats.hp.current_hp > this.stats.hp.max_hp) {
+            this.stats.hp.current_hp = this.stats.hp.max_hp
+        }
+        messages.push(`¡${capitalize(this.name)} recuperó salud!`);
+    }
+
+    endTurnStatus(messages) {
+        // Veneno
+        if (this.status == "poisoned" || this.status == "badly-poisoned") {
+            this.turns_poisoned++;
+            messages.push(`¡${capitalize(this.name)} pierde salud por el veneno!`);
+
+            let damage;
+            if (this.status == "badly-poisoned")
+                damage = Math.floor(this.stats.hp.max_hp * (1 / 16) * this.turns_poisoned);
+            else
+                damage = Math.floor(this.stats.hp.max_hp * 1 / 8);
+
+            this.reduceHP(damage, messages);
+        }
+
+        // Quemadura
+        if (this.status == "burned") {
+            messages.push(`¡${capitalize(this.name)} pierde salud por la quemadura!`);
+            this.reduceHP(Math.floor(this.stats.hp.max_hp * 1 / 8), messages);
+        }
+
+        // Retroceso
+        this.other_status.flinched = false;
+    }
+
+    isFlinched() {
+        return this.other_status.flinched;
+    }
+
+    handleConfusion(messages) {
+        if (!this.other_status.confused)
+            return false;
+
+        messages.push(`¡${capitalize(this.name)} está confuso!`);
+
+        // 50% de probabilidades de atacarse a sí mismo
+        if (!probability(50, 100))
+            return false;
+
+        // Daño de un punto de salud por cada punto de ataque fisico
+        let damage = this.getBattleStat("atk");
+        messages.push(`¡${capitalize(this.name)} se ha dañado a sí mismo!`);
+        this.reduceHP(damage, messages);
+        return true;
+    }
+
+    handleParalysis(messages) {
+        // 25% de probabilidades de no actuar
+        if (this.status == "paralyzed" && probability(25, 100)) {
+            messages.push(`¡${capitalize(this.name)} está paralizado y no puede actuar!`);
+            return true;
+        }
+        return false;
+    }
+
+    handleSleep(messages) {
+        if (this.status != "asleep")
+            return false;
+
+        let wake_up = probability(100 / 3 * this.turns_asleep, 100);
+
+        if (wake_up) {
+            this.status == "OK";
+            this.turns_asleep = 0;
+            messages.push(`¡${capitalize(this.name)} se despertó!`);
+            return false;
+        }
+
+        messages.push(`${capitalize(this.name)} está dormido...`);
+        this.turns_asleep++;
+        return true;
+    }
+
+    handleFreeze(messages) {
+        if (this.status != "frozen")
+            return false;
+        
+        // Probabilidad del 20% de descongelarse
+        if (probability(20, 100)) {
+            messages.push(`¡${capitalize(this.name)} se descongeló!`);
+            this.status = "OK";
+            return false;   
+        }
+
+        messages.push(`¡${capitalize(this.name)} está congelado y no puede actuar!`);
+        return true;
     }
 }
 

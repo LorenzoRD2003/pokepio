@@ -272,23 +272,29 @@ class Battle {
     }
 
     async manageTurn(player, opponent) {
-        // Uso la acción del jugador
-        this.useAction(player, opponent, this.messages);
+        try {
+            // Uso la acción del jugador
+            this.useAction(player, opponent, this.messages);
 
-        // Si el Pokémon del oponente está vivo
-        if (opponent.active_pokemon.is_alive) {
+            // Si el Pokémon del oponente está vivo
+            if (opponent.active_pokemon.is_alive) {
+                // Espero unos segundos
+                await sleep(2000);
+
+                // Uso la acción del oponente
+                this.useAction(opponent, player, this.messages);
+            }
+
             // Espero unos segundos
             await sleep(2000);
 
-            // Uso la acción del oponente
-            this.useAction(opponent, player, this.messages);
+            // Termino el turno
+            this.finishTurn(player, opponent);
+        } catch (err) {
+            console.log(err);
+            this.io.to(this.room).emit('error');
+            this.resetBattle();
         }
-
-        // Espero unos segundos
-        await sleep(2000);
-
-        // Termino el turno
-        this.finishTurn(player, opponent);
     }
 
     /**
@@ -300,10 +306,34 @@ class Battle {
     useAction(player, opponent) {
         // Primero quiero desarrollar la situación si action es un movimiento
         if (player.chosen_action.type == "move") {
-            const move = player.active_pokemon.moves[player.chosen_action.index];
+            // Si el Pokémon retrocedió, no puede atacar
+            if (player.active_pokemon.isFlinched())
+                return this.io.to(this.room).emit('action-result', this.data());;
 
-            // Reduzco un PP del movimiento
-            move.reducePP();
+            // Si el Pokémon está confuso, hay un 50% de que se ataque a sí mismo
+            if (player.active_pokemon.handleConfusion(this.messages)) {
+                if (!player.active_pokemon.is_alive)
+                    player.loseOnePokemon();
+
+                return this.io.to(this.room).emit('action-result', this.data());;
+            }
+
+            // Si el Pokémon está paralizado, puede que no ataque
+            if (player.active_pokemon.handleParalysis(this.messages)) {
+                return this.io.to(this.room).emit('action-result', this.data());
+            }
+
+            const move = player.active_pokemon.getMoveByIndex(player.chosen_action.index);
+
+            // Si hay PP del movimiento
+            if (move.hasPP()) {
+                // Reduzco un PP del movimiento
+                move.reducePP();
+            } else {
+                // Si no hay PP, uso struggle
+                this.messages.push("¡No quedan PP!");
+                move = new Move("struggle", 50, "normal", 999, 100, 0, "physical", 0, 0);
+            }
 
             // Añado un mensaje al vector de mensajes
             this.messages.push(`¡${capitalize(player.active_pokemon.name)} usó ${capitalize(move.name)}!`);
@@ -318,13 +348,13 @@ class Battle {
             if (boolOneHitKO)
                 return;
 
+            // Si acierta el movimiento, se ejecuta lo demás
+            const boolHasHit = move.hasHit(player.active_pokemon, opponent.active_pokemon, this.messages, this.weather);
+            if (!boolHasHit)
+                return;
+
             // Segun el tipo de movimiento
             if (move.damage_class == "physical" || move.damage_class == "special") {
-                // Si acierta el movimiento, se ejecuta lo demás
-                const boolHasHit = move.hasHit(player.active_pokemon, opponent.active_pokemon, this.messages);
-                if (!boolHasHit)
-                    return;
-
                 // Cuántas veces golpea el movimiento
                 const hits = move.howManyHits(player.active_pokemon, this.messages);
 
@@ -334,17 +364,18 @@ class Battle {
                     // Calculo el daño
                     damage = this.damageCalculator(
                         move,
-                        player.active_pokemon, // Ataque (fisico o especial)
-                        opponent.active_pokemon, // Defensa (fisica o especial)
-                        1, // Clima
+                        player.active_pokemon,
+                        opponent.active_pokemon,
+                        1, // Multiplicador de clima
                         move.criticalHit(player.active_pokemon, this.messages), // Golpe crítico
                         move.stab(player.active_pokemon), // STAB
                         move.effectiveness(opponent.active_pokemon, this.messages), // Efectividad
-                        move.isBurnedMultiplier(player.active_pokemon) // Multiplicador por estar quemado
-                    )
+                        move.isBurnedMultiplier(player.active_pokemon), // Multiplicador por estar quemado
+                    );
 
                     // Reduzco vida al Pokémon oponente
-                    opponent.active_pokemon.reduceHP(damage, this.messages);
+                    if (damage)
+                        opponent.active_pokemon.reduceHP(damage, this.messages);
 
                     // Si el oponente se debilitó, salimos del bucle for
                     if (!opponent.active_pokemon.is_alive)
@@ -372,7 +403,9 @@ class Battle {
                 // Movimientos que atrapan al oponente
                 move.trappingMoves(opponent.active_pokemon, this.messages);
             } else if (move.damage_class == "status") {
-
+                // Movimientos de estado
+                move.statusMoves(player.active_pokemon, opponent.active_pokemon, this.weather, this.messages);
+                move.recoveryMoves(player.active_pokemon, this.weather, this.messages);
             } else {
                 console.log("error movimiento");
             }
@@ -402,6 +435,9 @@ class Battle {
      * @returns 
      */
     async finishTurn(player, opponent) {
+        // Analizo estados alterados (veneno, quemado)
+        player.active_pokemon.endTurnStatus(this.messages);
+
         // Envío el estado al final del turno al servidor
         this.io.to(this.room).emit('finished-turn', this.data());
 
@@ -435,7 +471,7 @@ class Battle {
 
     /**
      * Calcula el daño de un golpe realizado por un Pokémon a otro.
-     * @param {Move} action Movimiento.
+     * @param {Move} move Movimiento.
      * @param {Pokemon} player_pokemon Pokémon atacante.
      * @param {Pokemon} opponent_pokemon Pokémon receptor.
      * @param {Number} weather_multiplier Multiplicador de daño por el clima. 
@@ -443,12 +479,36 @@ class Battle {
      * @param {Number} stab Multiplicador de daño por STAB.
      * @param {Number} effectiveness Multiplicador de daño por efectividad.
      * @param {Number} is_burned Multiplicador de daño por quemadura.
+     * @param {Number} other_multipliers Otros multiplicadores.
      * @returns Daño realizado.
      */
     damageCalculator(move, player_pokemon, opponent_pokemon, weather_multiplier, is_critical, stab, effectiveness, is_burned) {
         let attack_stat, defense_stat, attack_string, defense_string;
 
-        // Primero, reviso si es fisico o especial
+        // Primero, me fijo los movimientos de daño fijo
+        switch (move.name) {
+            case "sonic-boom":
+                return move.effectiveness(opponent_pokemon, []) ? 20 : 0;
+            case "dragon-rage":
+                return move.effectiveness(opponent_pokemon, []) ? 40 : 0;
+            case "seismic-toss":
+            case "night-shade":
+                return move.effectiveness(opponent_pokemon, []) ? player_pokemon.level : 0;
+            case "super-fang":
+                return Math.ceil(0.5 * opponent_pokemon.stats.hp.current_hp);
+        }
+
+        // Ataques de daño segun felicidad
+        let movePower;
+        if (move.name == "return")
+            movePower = Math.floor((2 / 5) * player_pokemon.happiness);
+        else if (move.name == "frustration")
+            movePower = Math.floor((2 / 5) * (255 - player_pokemon.happiness));
+        else
+            movePower = move.power;
+
+
+        // Reviso si el movimiento es fisico o especial
         if (move.damage_class == "physical") {
             attack_stat = player_pokemon.stats.atk;
             attack_string = "atk";
@@ -468,7 +528,7 @@ class Battle {
         const final_defense = (is_critical && opponent_pokemon.getStatMultiplier(defense_string) > 1) ? defense_stat.base_stat : opponent_pokemon.getBattleStat(defense_string);
 
         // Calculo el daño base
-        const base_damage = ((0.4 * player_pokemon.level + 2) * move.power * final_attack / final_defense) / 50 + 2;
+        const base_damage = ((0.4 * player_pokemon.level + 2) * movePower * final_attack / final_defense) / 50 + 2;
 
         // Daño luego de los multiplicadores
         const damage_with_multipliers = base_damage * weather_multiplier * stab * effectiveness * is_burned;
@@ -477,8 +537,8 @@ class Battle {
         const damage_after_crit_hit = (is_critical) ? damage_with_multipliers * 2 : damage_with_multipliers;
 
         // Multiplico por un valor aleatorio entre 0.85 y 1
-        const damage_after_random_multiplier = Math.floor(damage_after_crit_hit * randomNumberInInterval(85, 100) * 0.01);
-        return damage_after_random_multiplier;
+        const final_damage = Math.floor(damage_after_crit_hit * randomNumberInInterval(85, 100) * 0.01);
+        return final_damage;
     }
 }
 

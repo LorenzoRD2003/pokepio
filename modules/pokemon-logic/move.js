@@ -28,6 +28,10 @@ class Move {
         this.crit_rate = crit_rate;
     }
 
+    hasPP() {
+        return this.pp > 0;
+    }
+
     reducePP() {
         if (this.pp > 0)
             this.pp--;
@@ -79,7 +83,6 @@ class Move {
         const found = pokemon.types.find(pokemonType => pokemonType.name == this.type);
         return (found) ? 1.5 : 1;
     }
-    
 
     /**
      * Devuelve el multiplicador por efectividad.
@@ -128,28 +131,24 @@ class Move {
      * @param {Array} messages Vector de mensajes.
      */
     recoilDamage(pokemon, damage, messages) {
-        let recoilMultiplier = 0;
-        // Según el movimiento, hay distinto multiplicador de daño por retroceso.
+        let lostHP;
+        // Según el movimiento, hay distinta vida perdida.
         switch (this.name) {
             case "take-down":
             case "submission":
-                recoilMultiplier = 1 / 4; break;
+                lostHP = Math.floor((1 / 4) * damage); break;
             case "double-edge":
             case "volt-tackle":
-                recoilMultiplier = 1 / 3; break;
+                lostHP = Math.floor((1 / 3) * damage); break;
+            case "struggle":
+                lostHP = Math.floor((1 / 4) * pokemon.stats.hp.max_hp); break;
             default:
-                break;
+                return;
         }
 
-        // Si hay daño de retroceso
-        if (recoilMultiplier != 0) {
-            // Calculamos vida perdida
-            const lostHP = damage * recoilMultiplier;
-
-            // Mostramos el mensaje y reducimos vida del Pokémon
-            messages.push(`${capitalize(pokemon.name)} pierde ${lostHP} puntos de vida por daño de retroceso.`);
-            pokemon.reduceHP(damage, messages);
-        }
+        // Mostramos el mensaje y reducimos vida del Pokémon
+        messages.push(`${capitalize(pokemon.name)} pierde ${lostHP} puntos de vida por daño de retroceso.`);
+        pokemon.reduceHP(damage, messages);
     }
 
     /**
@@ -157,12 +156,18 @@ class Move {
      * @param {Object} pokemon Pokémon que usa el movimiento.
      * @param {Object} opponent Pokémon oponente.
      * @param {Array} messages Vector de mensajes. 
+     * @param {String} weather Clima de la batalla.
      * @returns true si acertó, false si falló.
      */
-    hasHit(pokemon, opponent, messages) {
+    hasHit(pokemon, opponent, messages, weather) {
         // Movimientos que no fallan
-        const movesThatNeverFail = ["swift", "feint-attack", "vital-throw", "shadow-punch", "aerial-ace", "magical-leaf", "shock-wave"];
-        if (movesThatNeverFail.includes(this.name))
+        if (this.accuracy === null)
+            return true;
+
+        if (this.name == "blizzard" && weather == "hail")
+            return true;
+
+        if (this.name == "thunder" && weather == "rainy")
             return true;
 
         let accuracy = this.accuracy; // Precisión base del movimiento
@@ -172,7 +177,7 @@ class Move {
 
         if (!result)
             messages.push(`¡${capitalize(opponent.name)} esquivó el ataque!`);
-        
+
         return result;
     }
 
@@ -199,7 +204,7 @@ class Move {
         // Si hay daño por absorción
         if (absorbMultiplier != 0) {
             // Calculamos vida recuperada
-            const absorbedHP = damage * absorbMultiplier;
+            const absorbedHP = Math.floor(damage * absorbMultiplier);
 
             // Mostramos el mensaje y recuperamos vida del Pokémon
             messages.push(`${capitalize(pokemon.name)} recupera ${absorbedHP} puntos de vida por absorción de daño.`);
@@ -258,19 +263,6 @@ class Move {
             case "dragon-breath":
             case "volt-tackle":
                 opponent.paralyze(messages); break;
-            case "tri-attack":
-                let statusChoice = chooseRandom(["burn", "freeze", "paralysis"]);
-                switch (statusChoice) {
-                    case "burn":
-                        opponent.burn(messages); break;
-                    case "freeze":
-                        opponent.freeze(weather, messages); break;
-                    case "paralysis":
-                        opponent.paralyze(messages); break;
-                    default:
-                        break;
-                }
-                break;
             case "poison-sting":
             case "twineedle":
             case "smog":
@@ -303,6 +295,19 @@ class Move {
             case "signal-beam":
             case "water-pulse":
                 opponent.confuse(messages); break;
+            case "tri-attack":
+                let statusChoice = chooseRandom(["burn", "freeze", "paralysis"]);
+                switch (statusChoice) {
+                    case "burn":
+                        opponent.burn(messages); break;
+                    case "freeze":
+                        opponent.freeze(weather, messages); break;
+                    case "paralysis":
+                        opponent.paralyze(messages); break;
+                    default:
+                        break;
+                }
+                break;
             case "aurora-beam":
                 opponent.changeStatStage("atk", -1, messages); break;
             case "iron-tail":
@@ -362,7 +367,7 @@ class Move {
             case "blast-burn":
             case "hydro-cannon":
             case "frenzy-plant":
-                pokemon.activateHasToRest();
+                pokemon.other_status.has_to_rest = true;
         }
     }
 
@@ -465,6 +470,158 @@ class Move {
                 return 3;
             default:
                 return 1;
+        }
+    }
+
+    /**
+     * Trabaja con los movimientos de estado (cambios de stats y efectos de estado)
+     * @param {Object} pokemon Pokémon que usa el movimiento.
+     * @param {Object} opponent Pokémon que recibe el movimiento. 
+     * @param {String} weather Clima de la batalla.
+     * @param {Array} messages Vector de mensajes.
+     */
+    statusMoves(pokemon, opponent, weather, messages) {
+        // Según el nombre del movimiento
+        switch (this.name) {
+            case "poison-powder":
+            case "poison-gas":
+                opponent.poison(messages, false); break;
+            case "toxic":
+                opponent.poison(messages, true); break;
+            case "will-o-wisp":
+                opponent.burn(messages); break;
+            case "stun-spore":
+            case "thunder-wave":
+            case "glare":
+                opponent.paralyze(messages); break;
+            case "sing":
+            case "sleep-powder":
+            case "hypnosis":
+            case "lovely-kiss":
+            case "spore":
+            case "grass-whistle":
+                opponent.sleep(messages); break;
+            case "supersonic":
+            case "confuse-ray":
+            case "sweet-kiss":
+            case "teeter-dance":
+                opponent.confuse(messages); break;
+            case "swagger":
+                opponent.changeStatStage("atk", 2, messages);
+                opponent.confuse(messages);
+                break;
+            case "flatter":
+                opponent.changeStatStage("spa", 1, messages);
+                opponent.confuse(messages);
+                break;
+            case "meditate":
+            case "sharpen":
+            case "howl":
+                pokemon.changeStatStage("atk", 1, messages); break;
+            case "swords-dance":
+                pokemon.changeStatStage("atk", 2, messages); break;
+            case "harden":
+            case "withdraw":
+            case "defense-curl":
+                pokemon.changeStatStage("def", 1, messages); break;
+            case "barrier":
+            case "acid-armor":
+            case "iron-defense":
+                pokemon.changeStatStage("def", 2, messages); break;
+            case "tail-glow":
+                pokemon.changeStatStage("spa", 3, messages); break;
+            case "amnesia":
+                pokemon.changeStatStage("spd", 2, messages); break;
+            case "agility":
+                pokemon.changeStatStage("spe", 2, messages); break;
+            case "double-team":
+                pokemon.changeStatStage("eva", 1, messages); break;
+            case "bulk-up":
+                pokemon.changeStatStage("atk", 1, messages);
+                pokemon.changeStatStage("def", 1, messages);
+                break;
+            case "dragon-dance":
+                pokemon.changeStatStage("atk", 1, messages);
+                pokemon.changeStatStage("spe", 1, messages);
+                break;
+            case "cosmic-power":
+            case "stockpile":
+                pokemon.changeStatStage("def", 1, messages);
+                pokemon.changeStatStage("spd", 1, messages);
+                break;
+            case "calm-mind":
+                pokemon.changeStatStage("spa", 1, messages);
+                pokemon.changeStatStage("spd", 1, messages);
+                break;
+            case "growth":
+                if (weather == "sunny") {
+                    pokemon.changeStatStage("atk", 2, messages);
+                    pokemon.changeStatStage("spa", 2, messages);
+                } else {
+                    pokemon.changeStatStage("atk", 1, messages);
+                    pokemon.changeStatStage("spa", 1, messages);
+                }
+                break;
+            case "growl":
+                opponent.changeStatStage("atk", -1, messages); break;
+            case "charm":
+            case "feather-dance":
+                opponent.changeStatStage("atk", -2, messages); break;
+            case "tail-whip":
+            case "leer":
+                opponent.changeStatStage("def", -1, messages); break;
+            case "screech":
+                opponent.changeStatStage("def", -2, messages); break;
+            case "fake-tears":
+            case "metal-sound":
+                opponent.changeStatStage("spd", -2, messages); break;
+            case "string-shot":
+            case "cotton-spore":
+            case "scary-face":
+                opponent.changeStatStage("spe", -2, messages); break;
+            case "sand-attack":
+            case "smokescreen":
+            case "kinesis":
+            case "flash":
+                opponent.changeStatStage("acc", -1, messages); break;
+            case "sweet-scent":
+                opponent.changeStatStage("eva", -1, messages); break;
+            case "tickle":
+                opponent.changeStatStage("atk", -1, messages);
+                opponent.changeStatStage("def", -1, messages);
+                break;
+            case "memento":
+                opponent.changeStatStage("atk", -2, messages);
+                opponent.changeStatStage("spa", -2, messages);
+                pokemon.die(messages);
+                break;
+            default:
+                console.log("Error de movimiento de estado");
+        }
+    }
+
+    /**
+     * Movimientos de recuperación.
+     * @param {Object} pokemon Pokémon que usa el movimiento. 
+     * @param {String} weather Clima de la batalla.
+     * @param {Array} messages Vector de mensajes.
+     */
+    recoveryMoves(pokemon, weather, messages) {
+        switch(this.name) {
+            case "recover":
+            case "soft-boiled":
+            case "milk-drink":
+                pokemon.recoverHP(50, messages); break;
+            case "moonlight":
+            case "synthesis":
+            case "morning-sun":
+                if (weather == "sunny")
+                    pokemon.recoverHP(67, messages);
+                else if (weather == "hail" || weather == "rainy" || weather == "sandstorm")
+                    pokemon.recoverHP(25, messages);
+                else
+                    pokemon.recoverHP(50, messages);
+                break;
         }
     }
 }
