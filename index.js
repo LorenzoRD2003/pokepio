@@ -20,7 +20,10 @@ app.set('view engine', 'handlebars');
 app.use(session({
     secret: credentials.sessionSecret,
     resave: true,
-    saveUninitialized: true
+    saveUninitialized: true,
+    cookie: {
+        expires: 5 * 60000 // La sesión expira luego de 5 minutos
+    }
 }));
 
 const LISTEN_PORT = 3000;
@@ -122,11 +125,11 @@ app.use((req, res, next) => {
     // Lista de URL que no hace falta iniciar sesión
     const urlList = ["/", "/account/login", "/account/create", "/home/logout"];
 
-    // Verifico que no sea una petición AJAX, que no esté el req.session.user y que no esté en la lista
-    if (!req.session.user && !urlList.includes(req.url))
+    // Verifico que el usuario esté online y que no esté en la lista
+    if (req.session.user && !urlList.includes(req.url))
         next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
     else
-        next()
+        next();
 });
 
 // Redirecciona segun si inicié sesión o no

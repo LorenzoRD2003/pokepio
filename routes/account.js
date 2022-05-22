@@ -35,11 +35,6 @@ router.post("/login", async (req, res, next) => {
             case "access":
                 if (!user)
                     return next(ApiError.internalServerError("Ha ocurrido un error con el usuario obtenido."));
-
-                // Checkeamos que el usuario esté online
-                const alreadyOnline = await databaseFunctions.checkUserOnline(user.ID_User);
-                if (alreadyOnline)
-                    return next(ApiError.badRequestError("Su usuario ya inició sesión."));
                 
                 // Actualizamos que el usuario está ONLINE
                 await databaseFunctions.setUserOnline(user.ID_User)
