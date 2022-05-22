@@ -85,6 +85,7 @@ class Player {
     assignActivePokemon(index, messages) {
         this.active_pokemon = this.battle_team[index];
         this.active_pokemon_index = index;
+        this.active_pokemon.enterBattle();
         messages.push(`${this.username} elige a ${capitalize(this.active_pokemon.name)}.`);
     }
     

@@ -434,3 +434,14 @@ exports.deleteBattle = async ID_Battle => {
     `);
 }
 
+/**
+ * Devuelve todos los combates en los que participó este usuario.
+ * @param {Number} ID_User ID del usuario. 
+ * @returns Vector de combates.
+ */
+exports.getAllBattlesByUser = async ID_User => {
+    return (await MySQL.realizarQuery(`
+        select ID_Battle, winner, loser, result from ${tablaBatallas}
+        where ID_User1 = ${ID_User} || ID_User2 = ${ID_User}; 
+    `));
+}

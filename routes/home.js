@@ -25,7 +25,13 @@ const router = new express.Router();
 
 router.get('/', async (req, res, next) => {
     try {
-        res.render('home', { user: req.session.user });
+        const user = req.session.user;
+        const battles = await databaseFunctions.getAllBattlesByUser(user.ID_User);
+
+        res.render('home', {
+            user: user,
+            battles: battles
+        });
     } catch (err) {
         next(ApiError.internalServerError(err.message));
     }

@@ -1,4 +1,4 @@
-const { capitalize, probability } = require("../mathFunctions.js");
+const { capitalize, probability, chooseRandom } = require("../mathFunctions.js");
 const { Move } = require("./move.js");
 
 /**
@@ -207,6 +207,22 @@ class Pokemon {
         const base_stat = this.getStat(stat_name).base_stat;
         const multiplier = this.getStatMultiplier(stat_name);
         return base_stat * multiplier;
+    }
+
+    enterBattle() {
+        this.stats.atk.stage = 0;
+        this.stats.def.stage = 0;
+        this.stats.spa.stage = 0;
+        this.stats.spd.stage = 0;
+        this.stats.spe.stage = 0;
+        this.stats.acc.stage = 0;
+        this.stats.eva.stage = 0;
+
+        for (let status in this.other_status)
+            status = false;
+
+        this.crit_rate = 0;
+        this.turns_poisoned = 0;
     }
 
     /**
@@ -503,7 +519,7 @@ class Pokemon {
             return;
 
         // Elijo aleatoriamente la cantidad de turnos que va a estar atrapado
-        const howManyTurns = mathFunctions.chooseRandom(2, 2, 2, 3, 3, 3, 4, 5);
+        const howManyTurns = chooseRandom(2, 2, 2, 3, 3, 3, 4, 5);
         this.other_status.bounded = howManyTurns;
 
         messages.push(`¡${capitalize(this.name)} fue atrapado por el ataque de su oponente!`);
@@ -557,7 +573,7 @@ class Pokemon {
             return false;
 
         // Daño de un punto de salud por cada punto de ataque fisico
-        let damage = this.getBattleStat("atk");
+        let damage = Math.floor(0.25 * this.getBattleStat("atk"));
         messages.push(`¡${capitalize(this.name)} se ha dañado a sí mismo!`);
         this.reduceHP(damage, messages);
         return true;
@@ -579,7 +595,7 @@ class Pokemon {
         let wake_up = probability(100 / 3 * this.turns_asleep, 100);
 
         if (wake_up) {
-            this.status == "OK";
+            this.status = "OK";
             this.turns_asleep = 0;
             messages.push(`¡${capitalize(this.name)} se despertó!`);
             return false;
@@ -593,12 +609,12 @@ class Pokemon {
     handleFreeze(messages) {
         if (this.status != "frozen")
             return false;
-        
+
         // Probabilidad del 20% de descongelarse
         if (probability(20, 100)) {
             messages.push(`¡${capitalize(this.name)} se descongeló!`);
             this.status = "OK";
-            return false;   
+            return false;
         }
 
         messages.push(`¡${capitalize(this.name)} está congelado y no puede actuar!`);

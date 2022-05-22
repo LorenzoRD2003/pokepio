@@ -306,6 +306,21 @@ class Battle {
     useAction(player, opponent) {
         // Primero quiero desarrollar la situación si action es un movimiento
         if (player.chosen_action.type == "move") {
+            // Si el Pokémon está dormido
+            if (player.active_pokemon.handleSleep(this.messages)) {
+                return this.io.to(this.room).emit('action-result', this.data());
+            }
+
+            // Si el Pokémon está paralizado, puede que no ataque
+            if (player.active_pokemon.handleParalysis(this.messages)) {
+                return this.io.to(this.room).emit('action-result', this.data());
+            }
+
+            // Si el Pokémon está congelado
+            if (player.active_pokemon.handleFreeze(this.messages)) {
+                return this.io.to(this.room).emit('action-result', this.data());
+            }
+
             // Si el Pokémon retrocedió, no puede atacar
             if (player.active_pokemon.isFlinched())
                 return this.io.to(this.room).emit('action-result', this.data());;
@@ -316,11 +331,6 @@ class Battle {
                     player.loseOnePokemon();
 
                 return this.io.to(this.room).emit('action-result', this.data());;
-            }
-
-            // Si el Pokémon está paralizado, puede que no ataque
-            if (player.active_pokemon.handleParalysis(this.messages)) {
-                return this.io.to(this.room).emit('action-result', this.data());
             }
 
             const move = player.active_pokemon.getMoveByIndex(player.chosen_action.index);

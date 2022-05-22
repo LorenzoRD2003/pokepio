@@ -84,4 +84,28 @@
             </div>
         </div>
     </div>
+
+    <div class="mt-5 bg-light mb-3 p-3 border">
+        <h2>Historial de batallas</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Ganador</th>
+                    <th>Perdedor</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#each battles}}
+                <tr>
+                    <td>{{this.ID_Battle}}</td>
+                    <td>{{this.winner}}</td>
+                    <td>{{this.winner}}</td>
+                    <td>{{this.result}}</td>
+                </tr>
+                {{/each}}
+            </tbody>
+        </table>
+    </div>
 </div>
