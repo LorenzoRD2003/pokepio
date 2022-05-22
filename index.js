@@ -126,7 +126,7 @@ app.use((req, res, next) => {
     const urlList = ["/", "/account/login", "/account/create", "/home/logout"];
 
     // Verifico que el usuario esté online y que no esté en la lista
-    if (req.session.user && !urlList.includes(req.url))
+    if (!req.session.user && !urlList.includes(req.url))
         next(ApiError.unauthorizedError("Debe iniciar sesión para poder entrar a esta página."));
     else
         next();
