@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 const { ApiError } = require('../modules/error-handler.js');
 const databaseFunctions = require("../modules/databaseFunctions.js");
 const { pokemonNamesList } = require("../modules/dataArrays.js");
@@ -17,7 +19,8 @@ const upload = multer({ storage: storage });
 const deleteFileHandler = err => err ? console.log("No se puedo borrar.", err) : console.log("Se pudo borrar");
 const deleteProfilePhoto = async ID_User => {
     const profilePhoto = await databaseFunctions.getProfilePhoto(ID_User);
-    fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
+    if (profilePhoto)
+        fs.unlink(`${__dirname}/public/img/profile_photos/${profilePhoto}`, deleteFileHandler);
 }
 
 const express = require("express");

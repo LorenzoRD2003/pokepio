@@ -5,7 +5,6 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 const bodyParser = require('body-parser');
 const databaseFunctions = require('./modules/databaseFunctions');
-const mathFunctions = require('./modules/mathFunctions');
 const credentials = require("./modules/credentials");
 const { ApiError, api404Handler, apiErrorHandler } = require('./modules/error-handler.js');
 const session = require('express-session');
