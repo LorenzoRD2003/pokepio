@@ -49,7 +49,7 @@ const updateBattleDOM = (player, opponent) => {
     document.getElementById("pokemon1Ability").innerText = `Habilidad: ${ability}`;
 
     // Objeto del Pokémon
-    document.getElementById("pokemon1Item").innerText = `Objeto: ${capitalizeFirstLetter(item)}`;
+    document.getElementById("pokemon1Item").innerText = `Objeto: ${capitalizeFirstLetter(item || "(vacio)")}`;
 
     // Estado del Pokémon
     document.getElementById("pokemon1Status").innerText = `Estado: ${status}`;
