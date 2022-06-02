@@ -28,7 +28,7 @@ class Pokemon {
         this.ability = ability;
         this.item = item;
         this.nature = nature;
-        this.moves = moves.map(move => new Move(move.name, move.power, move.type, move.pp, move.accuracy, move.priority, move.damage_class, move.effect_chance, move.meta?.crit_rate));
+        this.moves = moves.map(move => move ? new Move(move.name, move.power, move.type, move.pp, move.accuracy, move.priority, move.damage_class, move.effect_chance, move.meta?.crit_rate) : null);
         this.sprite = sprite;
         this.base_stats = base_stats;
         this.ev = ev;
