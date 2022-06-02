@@ -21,7 +21,7 @@ class Player {
         this.username = username;
         this.profile_photo = profile_photo;
         this.battle_team = battle_team.map(pokemon => {
-            const pokemon_types = pokemon.types.map(poketype => allTypes.find(type => poketype == type.name));
+            const pokemon_types = pokemon.types?.map(poketype => allTypes.find(type => poketype == type.name));
 
             const pokemon_nature = naturesList.find(nature => nature.name == pokemon.nature);
             const base_stats = fetchFunctions.getPokemonBaseStats(pokemon.name);
